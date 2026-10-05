@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-05 15:11-0400\n"
+"POT-Creation-Date: 2026-10-05 16:38-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: dox-care.php:97
+#: dox-care.php:99
 msgid "Your care plan, site status and change requests."
 msgstr "Tu plan de cuidado, el estado de tu web y tus solicitudes de cambios."
 
@@ -38,7 +38,9 @@ msgstr "No pudimos enviarlo. Escríbenos por correo, por favor."
 msgid ""
 "The files add up to more than 20 MB. Send fewer, or share them with a link "
 "in the message."
-msgstr "Los archivos suman más de 20 MB. Envía menos, o compártelos con un enlace en el mensaje."
+msgstr ""
+"Los archivos suman más de 20 MB. Envía menos, o compártelos con un enlace en "
+"el mensaje."
 
 #: includes/class-admin-bar.php:66
 msgid "Close"
@@ -132,7 +134,9 @@ msgstr "o escribir a"
 msgid ""
 "Changes are requested by the owner or an editor of the website. Ask them, or "
 "write to"
-msgstr "Los cambios los pide el dueño o un editor de la web. Pídeselo a ellos, o escribe a"
+msgstr ""
+"Los cambios los pide el dueño o un editor de la web. Pídeselo a ellos, o "
+"escribe a"
 
 #: includes/class-dashboard.php:159
 msgid "Your latest requests"
@@ -239,6 +243,87 @@ msgstr "Ver planes"
 #: includes/class-dashboard.php:231
 msgid "Classic WordPress dashboard"
 msgstr "Escritorio clásico de WordPress"
+
+#: includes/class-login.php:73 includes/class-login.php:86
+msgid ""
+"Too many codes requested. Wait a few minutes or sign in with your password."
+msgstr ""
+"Has pedido demasiados códigos. Espera unos minutos o entra con tu contraseña."
+
+#: includes/class-login.php:104
+msgid "That code is not valid or has expired. Request a new one."
+msgstr "Ese código no es válido o ya caducó. Pide uno nuevo."
+
+#. translators: 1: the code, 2: site name
+#: includes/class-login.php:138
+#, php-format
+msgid "%1$s is your code to sign in to %2$s"
+msgstr "%1$s es tu código para entrar a %2$s"
+
+#. translators: %s: site name
+#: includes/class-login.php:141
+#, php-format
+msgid "Your code to sign in to %s:"
+msgstr "Tu código para entrar a %s:"
+
+#: includes/class-login.php:143
+msgid "It is valid for 10 minutes and can be used once."
+msgstr "Vale 10 minutos y se puede usar una sola vez."
+
+#: includes/class-login.php:144
+msgid ""
+"If you did not request it, ignore this email: nobody can sign in without the "
+"code."
+msgstr ""
+"Si no lo pediste, ignora este correo: nadie puede entrar sin el código."
+
+#: includes/class-login.php:167
+msgid "Sign in with a code by email"
+msgstr "Entrar con un código por correo"
+
+#: includes/class-login.php:200
+msgid ""
+"If that account exists, we sent a 6-digit code to its email. It may take a "
+"minute; check spam too."
+msgstr ""
+"Si esa cuenta existe, enviamos un código de 6 números a su correo. Puede "
+"tardar un minuto; revisa también el spam."
+
+#: includes/class-login.php:201
+msgid ""
+"Write your email or username and we will send you a code to sign in, no "
+"password needed."
+msgstr ""
+"Escribe tu correo o tu usuario y te enviamos un código para entrar, sin "
+"contraseña."
+
+#: includes/class-login.php:203 includes/class-settings.php:286
+msgid "Sign in with a code"
+msgstr "Entrar con un código"
+
+#: includes/class-login.php:209
+msgid "Username or email"
+msgstr "Usuario o correo"
+
+#: includes/class-login.php:212
+msgid "Send me a code"
+msgstr "Envíame un código"
+
+#: includes/class-login.php:216
+msgid "Code"
+msgstr "Código"
+
+#: includes/class-login.php:219
+msgid "Sign in"
+msgstr "Entrar"
+
+#: includes/class-login.php:224
+msgid "Request another code"
+msgstr "Pedir otro código"
+
+#: includes/class-login.php:226
+msgid "Sign in with your password"
+msgstr "Entrar con tu contraseña"
 
 #: includes/class-plans.php:19
 msgid "Included in your Dox Studio hosting"
@@ -372,7 +457,9 @@ msgstr "No tienes permiso para hacer esto."
 #, php-format
 msgid ""
 "The message is too long. Keep it under %s characters, or attach a document."
-msgstr "El mensaje es demasiado largo. Déjalo en menos de %s caracteres, o adjunta un documento."
+msgstr ""
+"El mensaje es demasiado largo. Déjalo en menos de %s caracteres, o adjunta "
+"un documento."
 
 #: includes/class-requests.php:106
 msgid "Tell us what you want to change."
@@ -409,8 +496,8 @@ msgstr "[Fuera del plan]"
 msgid "Website"
 msgstr "Web"
 
-#: includes/class-requests.php:190 includes/class-settings.php:301
-#: includes/class-settings.php:334
+#: includes/class-requests.php:190 includes/class-settings.php:333
+#: includes/class-settings.php:366
 msgid "Page"
 msgstr "Página"
 
@@ -475,8 +562,12 @@ msgid ""
 msgid_plural ""
 "%d files were not attached (wrong type, too big or too many): send them to "
 "us by email."
-msgstr[0] "%d archivo no se adjuntó (tipo no permitido, demasiado grande o de más): envíanoslo por correo."
-msgstr[1] "%d archivos no se adjuntaron (tipo no permitido, demasiado grandes o de más): envíanoslos por correo."
+msgstr[0] ""
+"%d archivo no se adjuntó (tipo no permitido, demasiado grande o de más): "
+"envíanoslo por correo."
+msgstr[1] ""
+"%d archivos no se adjuntaron (tipo no permitido, demasiado grandes o de "
+"más): envíanoslos por correo."
 
 #: includes/class-requests.php:244
 msgid "The whole website"
@@ -510,39 +601,39 @@ msgstr "Hasta 5 archivos, 20 MB en total."
 msgid "Send request"
 msgstr "Enviar solicitud"
 
-#: includes/class-settings.php:82
+#: includes/class-settings.php:106
 msgid "Only Dox Studio can change this."
 msgstr "Solo Dox Studio puede cambiar esto."
 
 #. translators: %s: plan name
-#: includes/class-settings.php:211
+#: includes/class-settings.php:236
 #, php-format
 msgid "Your plan: %s."
 msgstr "Tu plan: %s."
 
-#: includes/class-settings.php:213 includes/class-settings.php:264
+#: includes/class-settings.php:238 includes/class-settings.php:296
 msgid "See the dashboard"
 msgstr "Ver el escritorio"
 
-#: includes/class-settings.php:222
+#: includes/class-settings.php:247
 msgid "Settings saved."
 msgstr "Ajustes guardados."
 
-#: includes/class-settings.php:229
+#: includes/class-settings.php:254
 msgid "Care plan"
 msgstr "Plan de cuidado"
 
-#: includes/class-settings.php:236
+#: includes/class-settings.php:261
 msgid ""
 "The plan this client has. It decides what the dashboard says is included."
 msgstr ""
 "El plan que tiene este cliente. Decide lo que el escritorio dice que incluye."
 
-#: includes/class-settings.php:240
+#: includes/class-settings.php:265
 msgid "Client name"
 msgstr "Nombre del cliente"
 
-#: includes/class-settings.php:243
+#: includes/class-settings.php:268
 msgid ""
 "Optional. Used in the greeting; if empty, the name of the logged-in user is "
 "used."
@@ -550,39 +641,54 @@ msgstr ""
 "Opcional. Se usa en el saludo; si está vacío, se usa el nombre del usuario "
 "que entra."
 
-#: includes/class-settings.php:247
+#: includes/class-settings.php:272
 msgid "Language"
 msgstr "Idioma"
 
-#: includes/class-settings.php:250
+#: includes/class-settings.php:275
 msgid "Automatic (each user’s language)"
 msgstr "Automático (el idioma de cada usuario)"
 
-#: includes/class-settings.php:257
+#: includes/class-settings.php:282
 msgid "Requests go to"
 msgstr "Las solicitudes llegan a"
 
-#: includes/class-settings.php:261 includes/class-settings.php:325
+#: includes/class-settings.php:288
+msgid ""
+"Let users sign in with a code sent to their email, as well as with their "
+"password."
+msgstr ""
+"Permitir entrar con un código enviado al correo, además de con la contraseña."
+
+#: includes/class-settings.php:289
+msgid ""
+"Also on the Dox POS register screen. Turn it off if this website’s emails do "
+"not arrive reliably."
+msgstr ""
+"También en la pantalla de la caja de Dox POS. Apágalo si los correos de esta "
+"web no llegan bien."
+
+#: includes/class-settings.php:293 includes/class-settings.php:357
 msgid "Save changes"
 msgstr "Guardar cambios"
 
-#: includes/class-settings.php:280
+#: includes/class-settings.php:312
 msgid "Updates"
 msgstr "Actualizaciones"
 
 #. translators: %d: requests
-#: includes/class-settings.php:290
+#: includes/class-settings.php:322
 #, php-format
 msgid "%d requests (unlimited plan)"
 msgstr "%d solicitudes (plan ilimitado)"
 
 #. translators: 1: used, 2: included
-#: includes/class-settings.php:292
+#: includes/class-settings.php:324
 #, php-format
 msgid "%1$d of %2$d updates used"
 msgstr "%1$d de %2$d actualizaciones usadas"
 
-#: includes/class-settings.php:293
+#: includes/class-settings.php:325
 msgid ""
 "Each request from the form counts 1. Set 0 if it was a fix on our side, or 2 "
 "if it covered two pages."
@@ -590,55 +696,55 @@ msgstr ""
 "Cada solicitud del formulario cuenta 1. Pon 0 si era un arreglo nuestro, o 2 "
 "si abarcaba dos páginas."
 
-#: includes/class-settings.php:300 includes/class-settings.php:333
+#: includes/class-settings.php:332 includes/class-settings.php:365
 msgid "Date"
 msgstr "Fecha"
 
-#: includes/class-settings.php:302
+#: includes/class-settings.php:334
 msgid "Request"
 msgstr "Solicitud"
 
-#: includes/class-settings.php:303
+#: includes/class-settings.php:335
 msgid "Source"
 msgstr "Origen"
 
-#: includes/class-settings.php:304 includes/class-settings.php:336
+#: includes/class-settings.php:336 includes/class-settings.php:368
 msgid "Counts"
 msgstr "Cuenta"
 
-#: includes/class-settings.php:305 includes/class-settings.php:337
+#: includes/class-settings.php:337 includes/class-settings.php:369
 msgid "Note"
 msgstr "Nota"
 
-#: includes/class-settings.php:306
+#: includes/class-settings.php:338
 msgid "Delete"
 msgstr "Borrar"
 
-#: includes/class-settings.php:310
+#: includes/class-settings.php:342
 msgid "No updates this month."
 msgstr "No hay actualizaciones este mes."
 
-#: includes/class-settings.php:317
+#: includes/class-settings.php:349
 msgid "Added by hand"
 msgstr "Añadida a mano"
 
-#: includes/class-settings.php:317
+#: includes/class-settings.php:349
 msgid "Form"
 msgstr "Formulario"
 
-#: includes/class-settings.php:327
+#: includes/class-settings.php:359
 msgid "Add an update by hand"
 msgstr "Añadir una actualización a mano"
 
-#: includes/class-settings.php:328
+#: includes/class-settings.php:360
 msgid "For changes that came by email or ticket."
 msgstr "Para los cambios que llegaron por correo o por ticket."
 
-#: includes/class-settings.php:335
+#: includes/class-settings.php:367
 msgid "What was changed"
 msgstr "Qué se cambió"
 
-#: includes/class-settings.php:339
+#: includes/class-settings.php:371
 msgid "Add update"
 msgstr "Añadir actualización"
 

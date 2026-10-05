@@ -9,6 +9,7 @@ Plugin de WordPress de Dox Studio para las webs de sus clientes de hosting y man
 - **Contador de actualizaciones del mes**, según la sección F de los Términos del Servicio: cada solicitud cuenta 1; Dox Studio la ajusta y añade a mano las que llegan por correo o ticket. El cliente ve "Este mes: X de 3".
 - **Estado de la web** leído de la propia web: SSL y su renovación, actualizaciones pendientes y último cambio publicado.
 - **Aviso central**: el cron de WordPress lee `https://my.doxstudio.com/dox-care.json` dos veces al día y el escritorio pinta lo guardado, sin esperar nunca a my.doxstudio.com (avisos para todos los clientes y precios de los planes). Se puede cambiar con la constante `DOX_CARE_FEED` en wp-config.php.
+- **Entrar con un código por correo**, además de con la contraseña (que sigue igual): código de 6 números, 10 minutos, un solo uso, 5 intentos, 5 códigos por usuario y 20 por IP cada hora, y no revela qué correos tienen cuenta. Sale bajo el formulario de entrada de WordPress (`wp-login.php?action=dox_code`, también con Hide My WP) y en la caja de Dox POS desde la 0.45.0, que lo pide por sus filtros `dox_pos_login_code_*`. Se apaga por web en los ajustes ("Entrar con código") o con el filtro `dox_care_login_code`.
 
 ## Ajustes
 

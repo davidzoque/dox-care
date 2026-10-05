@@ -18,6 +18,7 @@ class Dox_Care_Settings {
 			'language'      => 'auto',
 			'support_email' => 'support@doxstudio.com',
 			'client_name'   => '',
+			'login_code'    => '1',
 		];
 	}
 
@@ -39,6 +40,29 @@ class Dox_Care_Settings {
 		}
 		$locale = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
 		return strpos( (string) $locale, 'es' ) === 0 ? 'es' : 'en';
+	}
+
+	/**
+	 * Cambia los textos de Dox Care a 'es' o 'en' (para un correo a un usuario con otro
+	 * idioma) y devuelve la función que deja todo como estaba.
+	 */
+	public static function use_language( $lang ) {
+		$load = function ( $l ) {
+			unload_textdomain( 'dox-care' );
+			if ( $l === 'es' ) {
+				load_textdomain( 'dox-care', DOX_CARE_DIR . 'languages/dox-care-es_ES.mo' );
+			} else {
+				load_plugin_textdomain( 'dox-care', false, dirname( plugin_basename( DOX_CARE_FILE ) ) . '/languages' );
+			}
+		};
+		$before = self::language();
+		if ( $before === $lang ) {
+			return function () {};
+		}
+		$load( $lang );
+		return function () use ( $load, $before ) {
+			$load( $before );
+		};
 	}
 
 	/** Fecha corta en el idioma del panel (la web puede estar en otro idioma). */
@@ -184,6 +208,7 @@ class Dox_Care_Settings {
 			'language'      => in_array( $lang, [ 'auto', 'es', 'en' ], true ) ? $lang : 'auto',
 			'support_email' => is_email( $mail ) ? $mail : 'support@doxstudio.com',
 			'client_name'   => sanitize_text_field( self::field( 'client_name' ) ),
+			'login_code'    => self::field( 'login_code' ) === '1' ? '1' : '0',
 		];
 		update_option( self::OPTION, $after );
 
@@ -256,6 +281,13 @@ class Dox_Care_Settings {
 					<tr>
 						<th scope="row"><label for="dxc-mail"><?php esc_html_e( 'Requests go to', 'dox-care' ); ?></label></th>
 						<td><input id="dxc-mail" type="email" class="regular-text" name="support_email" value="<?php echo esc_attr( $s['support_email'] ); ?>"></td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Sign in with a code', 'dox-care' ); ?></th>
+						<td>
+							<label><input type="checkbox" name="login_code" value="1" <?php checked( $s['login_code'], '1' ); ?>> <?php esc_html_e( 'Let users sign in with a code sent to their email, as well as with their password.', 'dox-care' ); ?></label>
+							<p class="description"><?php esc_html_e( 'Also on the Dox POS register screen. Turn it off if this website’s emails do not arrive reliably.', 'dox-care' ); ?></p>
+						</td>
 					</tr>
 				</table>
 				<?php submit_button( __( 'Save changes', 'dox-care' ) ); ?>
