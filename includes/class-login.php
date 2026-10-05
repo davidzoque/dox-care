@@ -132,6 +132,7 @@ class Dox_Care_Login {
 			ON DUPLICATE KEY UPDATE n = LAST_INSERT_ID(IF(expires < %d, 1, n + 1)), expires = IF(expires < %d, %d, expires)",
 			$k, $now + $window, $now, $now, $now + $window
 		) );
+		$id = (int) $wpdb->insert_id; // Antes de la limpieza: otra consulta podría ponerlo a 0.
 		if ( $rows !== false && wp_rand( 1, 50 ) === 1 ) {
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE expires < %d", $now ) );
 		}
@@ -140,7 +141,7 @@ class Dox_Care_Login {
 		if ( $rows === 1 ) {
 			$n = 1;
 		} elseif ( $rows === 2 ) {
-			$n = (int) $wpdb->insert_id;
+			$n = $id;
 		} else {
 			// La consulta falló (¿la tabla ya no está?): se cierra, y en la próxima carga se
 			// vuelve a instalar.
@@ -380,7 +381,11 @@ class Dox_Care_Login {
 	 * topes de comprobación: no se puede usar para generar fallos sin límite a nombre de otro.
 	 */
 	private static function failed( $login, WP_Error $error ) {
-		do_action( 'wp_login_failed', (string) $login, $error );
+		// Como mucho 10 avisos por hora a nombre de la misma cuenta, aunque cambien de IP:
+		// si no, servirían para que un plugin que bloquea por usuario cierre la de otro.
+		if ( self::hit( 'failed|' . strtolower( trim( (string) $login ) ), self::CHECK_USER ) ) {
+			do_action( 'wp_login_failed', (string) $login, $error );
+		}
 	}
 
 	/** El correo con el código, en el idioma de ese usuario. El código no va en el asunto. */
