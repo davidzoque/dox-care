@@ -39,6 +39,8 @@ jobs:
             --exclude='*.zip' \
             --exclude='*.pot' \
             --exclude='README.md' \
+            --exclude='*~' \
+            --exclude='.DS_Store' \
             ./ build/dox-care/
           cd build
           zip -rq dox-care.zip dox-care

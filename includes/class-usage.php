@@ -13,7 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Dox_Care_Usage {
 
-	const OPTION = 'dox_care_usage';
+	const OPTION    = 'dox_care_usage';
+	const MONTH_MAX = 300; // Entradas por mes: de sobra para lo legítimo, y la opción no crece sin fin.
 
 	/** Actualizaciones incluidas al mes por plan; null = ilimitadas. */
 	public static function limit() {
@@ -61,13 +62,16 @@ class Dox_Care_Usage {
 
 	/**
 	 * Añade una entrada. $entry: source (form|manual), page, message, units, time.
-	 * Devuelve su id.
+	 * Devuelve su id, o '' si el mes ya tiene MONTH_MAX entradas.
 	 */
 	public static function add( array $entry ) {
 		$time  = (int) ( $entry['time'] ?? time() );
 		$month = self::month_key( $time );
 		$data  = self::all();
 		$id    = substr( md5( uniqid( '', true ) ), 0, 10 );
+		if ( count( $data[ $month ] ?? [] ) >= self::MONTH_MAX ) {
+			return '';
+		}
 		$data[ $month ][] = [
 			'id'      => $id,
 			'time'    => $time,

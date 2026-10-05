@@ -14,7 +14,9 @@
  *   "prices": { "pro": 97, "elite": 137 }
  * }
  *
- * Se guarda 6 horas. Si no se puede leer, el escritorio sigue igual sin avisos.
+ * Lo pide el cron de WordPress dos veces al día y se guarda en una opción: el
+ * escritorio pinta siempre lo guardado y nunca espera a doxstudio.com. Si no se puede
+ * leer, se queda lo último que se leyó bien (o nada, y el escritorio sale sin avisos).
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -23,25 +25,38 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Dox_Care_Feed {
 
-	const CACHE = 'dox_care_feed';
+	const OPTION = 'dox_care_feed';
+	const HOOK   = 'dox_care_feed_refresh';
 
-	public static function get() {
-		$cached = get_transient( self::CACHE );
-		if ( is_array( $cached ) ) {
-			return $cached;
+	public static function init() {
+		add_action( self::HOOK, [ __CLASS__, 'refresh' ] );
+		// Se programa aquí y no al activar: las actualizaciones no pasan por la activación.
+		if ( ! wp_next_scheduled( self::HOOK ) ) {
+			wp_schedule_event( time() + MINUTE_IN_SECONDS, 'twicedaily', self::HOOK );
+			delete_transient( 'dox_care_feed' ); // Lo que guardaba la 0.2.1.
 		}
+	}
 
-		$data = [];
-		$res  = wp_remote_get( DOX_CARE_FEED, [ 'timeout' => 4 ] );
-		if ( ! is_wp_error( $res ) && wp_remote_retrieve_response_code( $res ) === 200 ) {
+	public static function refresh() {
+		$res = wp_remote_get( DOX_CARE_FEED, [ 'timeout' => 10 ] );
+		if ( is_wp_error( $res ) ) {
+			return;
+		}
+		$code = wp_remote_retrieve_response_code( $res );
+		if ( $code === 200 ) {
 			$json = json_decode( wp_remote_retrieve_body( $res ), true );
 			if ( is_array( $json ) ) {
-				$data = $json;
+				update_option( self::OPTION, $json, false );
 			}
+		} elseif ( $code === 404 ) {
+			// El archivo ya no está: no hay avisos que mostrar.
+			update_option( self::OPTION, [], false );
 		}
-		// Aunque falle, se guarda vacío un rato para no preguntar en cada carga.
-		set_transient( self::CACHE, $data, is_array( $json ?? null ) ? 6 * HOUR_IN_SECONDS : HOUR_IN_SECONDS );
-		return $data;
+	}
+
+	public static function get() {
+		$data = get_option( self::OPTION, [] );
+		return is_array( $data ) ? $data : [];
 	}
 
 	/** Avisos vigentes, ya en el idioma del panel. */

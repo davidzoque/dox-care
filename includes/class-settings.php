@@ -52,9 +52,12 @@ class Dox_Care_Settings {
 	}
 
 	/**
-	 * Solo el equipo de Dox Studio cambia el plan y el contador: el usuario "support"
-	 * o un correo de doxstudio.com / paradoxstudio.co. Muchos clientes tienen su propia
-	 * cuenta de administrador y no deben poder poner su contador a cero.
+	 * Quién ve los ajustes y el contador editable: el usuario "support" o un correo de
+	 * doxstudio.com / paradoxstudio.co. Sirve para que el cliente no los toque sin
+	 * querer, NO para impedir que los manipule: un administrador del sitio puede crear
+	 * un usuario @doxstudio.com o ejecutar código, y esto no lo frena. Por eso cada
+	 * cambio avisa por correo a Dox Studio (alert), y el contador de la web informa
+	 * pero no vale como prueba de lo consumido.
 	 */
 	public static function is_staff() {
 		$user = wp_get_current_user();
@@ -81,29 +84,88 @@ class Dox_Care_Settings {
 		check_admin_referer( $nonce );
 	}
 
+	/** Un campo de texto del formulario; si llega como lista se trata como vacío. */
+	private static function field( $key ) {
+		$v = $_POST[ $key ] ?? '';
+		return is_scalar( $v ) ? (string) wp_unslash( $v ) : '';
+	}
+
+	/** Una lista del formulario (id => valor), quitando lo que no sea texto. */
+	private static function field_list( $key ) {
+		$v = $_POST[ $key ] ?? [];
+		return is_array( $v ) ? array_filter( wp_unslash( $v ), 'is_scalar' ) : [];
+	}
+
+	/**
+	 * Aviso a Dox Studio cuando alguien cambia los ajustes o el contador, con quién lo
+	 * hizo. Va siempre a DOX_CARE_ALERT_TO, no al correo de los ajustes, que es uno de
+	 * los datos que se pueden cambiar.
+	 */
+	private static function alert( $what, array $lines ) {
+		if ( ! $lines ) {
+			return;
+		}
+		$user = wp_get_current_user();
+		$site = wp_parse_url( home_url(), PHP_URL_HOST );
+		$body = 'Web: ' . home_url( '/' ) . "\n"
+			. 'Usuario: ' . $user->user_login . ' <' . $user->user_email . '> (id ' . $user->ID . ')' . "\n"
+			. 'IP: ' . sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) ) . "\n"
+			. 'Fecha: ' . wp_date( 'Y-m-d H:i:s T' ) . "\n\n"
+			. implode( "\n", $lines ) . "\n";
+		wp_mail( DOX_CARE_ALERT_TO, '[Dox Care] ' . $what . ': ' . $site, $body );
+	}
+
+	/** Una entrada del contador en una línea, para el aviso. */
+	private static function describe( array $e ) {
+		return wp_date( 'Y-m-d', (int) ( $e['time'] ?? 0 ) ) . ' | ' . ( $e['page'] ?? '' ) . ' | ' . mb_substr( (string) ( $e['message'] ?? '' ), 0, 80 ) . ' | cuenta ' . (int) ( $e['units'] ?? 0 );
+	}
+
 	public static function usage_save() {
 		self::guard( 'dox_care_usage_save' );
-		$month = preg_replace( '/[^0-9-]/', '', (string) ( $_POST['month'] ?? '' ) );
-		$units = array_map( 'intval', (array) ( $_POST['units'] ?? [] ) );
-		$notes = array_map( 'sanitize_text_field', wp_unslash( (array) ( $_POST['note'] ?? [] ) ) );
-		$del   = array_map( 'sanitize_key', (array) ( $_POST['delete'] ?? [] ) );
+		$month = preg_replace( '/[^0-9-]/', '', self::field( 'month' ) );
+		$units = array_map( 'intval', self::field_list( 'units' ) );
+		$notes = array_map( 'sanitize_text_field', self::field_list( 'note' ) );
+		$del   = array_map( 'sanitize_key', self::field_list( 'delete' ) );
+
+		$before = Dox_Care_Usage::entries( $month );
+		$used   = Dox_Care_Usage::used( $month );
 		Dox_Care_Usage::update( $month, $units, $notes, $del );
+		$after = [];
+		foreach ( Dox_Care_Usage::entries( $month ) as $e ) {
+			$after[ $e['id'] ] = $e;
+		}
+		$lines = [];
+		foreach ( $before as $e ) {
+			if ( ! isset( $after[ $e['id'] ] ) ) {
+				$lines[] = 'Borrada: ' . self::describe( $e );
+			} elseif ( (int) $after[ $e['id'] ]['units'] !== (int) $e['units'] ) {
+				$lines[] = 'Cuenta ' . (int) $e['units'] . ' -> ' . (int) $after[ $e['id'] ]['units'] . ': ' . self::describe( $e );
+			}
+		}
+		if ( $lines ) {
+			array_unshift( $lines, 'Mes ' . $month . ': ' . $used . ' -> ' . Dox_Care_Usage::used( $month ) . ' actualizaciones.', '' );
+		}
+		self::alert( 'Contador editado', $lines );
+
 		wp_safe_redirect( add_query_arg( [ 'updated' => '1', 'month' => $month ], wp_get_referer() ) . '#dxc-usage' );
 		exit;
 	}
 
 	public static function usage_add() {
 		self::guard( 'dox_care_usage_add' );
-		$date = sanitize_text_field( wp_unslash( $_POST['date'] ?? '' ) );
-		$time = $date ? strtotime( $date . ' 12:00:00' ) : time();
-		Dox_Care_Usage::add( [
+		$date  = sanitize_text_field( self::field( 'date' ) );
+		$time  = $date ? strtotime( $date . ' 12:00:00' ) : time();
+		$entry = [
 			'source'  => 'manual',
 			'time'    => $time ?: time(),
-			'page'    => sanitize_text_field( wp_unslash( $_POST['page'] ?? '' ) ),
-			'message' => sanitize_text_field( wp_unslash( $_POST['message'] ?? '' ) ),
-			'units'   => (int) ( $_POST['units'] ?? 1 ),
-			'note'    => sanitize_text_field( wp_unslash( $_POST['note'] ?? '' ) ),
-		] );
+			'page'    => sanitize_text_field( self::field( 'page' ) ),
+			'message' => sanitize_text_field( self::field( 'message' ) ),
+			'units'   => (int) ( self::field( 'units' ) ?: 1 ),
+			'note'    => sanitize_text_field( self::field( 'note' ) ),
+		];
+		if ( Dox_Care_Usage::add( $entry ) ) {
+			self::alert( 'Actualización añadida a mano', [ self::describe( $entry ) ] );
+		}
 		wp_safe_redirect( add_query_arg( 'updated', '1', wp_get_referer() ) . '#dxc-usage' );
 		exit;
 	}
@@ -112,16 +174,26 @@ class Dox_Care_Settings {
 		self::guard( 'dox_care_save' );
 
 		$plans = array_keys( Dox_Care_Plans::all() );
-		$plan  = sanitize_key( $_POST['plan'] ?? 'essentials' );
-		$lang  = sanitize_key( $_POST['language'] ?? 'auto' );
-		$mail  = sanitize_email( wp_unslash( $_POST['support_email'] ?? '' ) );
+		$plan  = sanitize_key( self::field( 'plan' ) ?: 'essentials' );
+		$lang  = sanitize_key( self::field( 'language' ) ?: 'auto' );
+		$mail  = sanitize_email( self::field( 'support_email' ) );
 
-		update_option( self::OPTION, [
+		$before = self::all();
+		$after  = [
 			'plan'          => in_array( $plan, $plans, true ) ? $plan : 'essentials',
 			'language'      => in_array( $lang, [ 'auto', 'es', 'en' ], true ) ? $lang : 'auto',
 			'support_email' => is_email( $mail ) ? $mail : 'support@doxstudio.com',
-			'client_name'   => sanitize_text_field( wp_unslash( $_POST['client_name'] ?? '' ) ),
-		] );
+			'client_name'   => sanitize_text_field( self::field( 'client_name' ) ),
+		];
+		update_option( self::OPTION, $after );
+
+		$lines = [];
+		foreach ( $after as $key => $value ) {
+			if ( (string) ( $before[ $key ] ?? '' ) !== (string) $value ) {
+				$lines[] = $key . ': ' . ( $before[ $key ] ?? '' ) . ' -> ' . $value;
+			}
+		}
+		self::alert( 'Ajustes cambiados', $lines );
 
 		wp_safe_redirect( add_query_arg( 'updated', '1', wp_get_referer() ) );
 		exit;

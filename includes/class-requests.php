@@ -3,7 +3,7 @@
  * "Pedir un cambio": el formulario del escritorio y de la barra superior manda la
  * solicitud por correo a soporte (support@doxstudio.com por defecto), con la web,
  * la página, quién la pide y los archivos adjuntos. Se guardan las últimas 20 en
- * la propia web para que el cliente vea lo que ha pedido.
+ * la propia web para que cada usuario vea lo que ha pedido él.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -12,18 +12,51 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Dox_Care_Requests {
 
-	const LOG        = 'dox_care_requests';
-	const CAP        = 'edit_posts';
-	const MAX_FILES  = 5;
-	const MAX_BYTES  = 10485760; // 10 MB por archivo.
-	const DAILY_MAX  = 15;
+	const LOG         = 'dox_care_requests';
+	const CAP         = 'edit_pages'; // Editor y Administrador: quien pide cambios de verdad.
+	const MAX_FILES   = 5;
+	const MAX_BYTES   = 10485760; // 10 MB por archivo.
+	const MAX_TOTAL   = 20971520; // 20 MB entre todos los adjuntos de una solicitud.
+	const MAX_MESSAGE = 5000;     // Caracteres del mensaje.
+	const DAILY_MAX   = 5;
 
 	public static function init() {
 		add_action( 'wp_ajax_dox_care_request', [ __CLASS__, 'handle' ] );
 	}
 
+	/** Quién puede pedir cambios. En una web con redactores se puede abrir con el filtro. */
+	public static function can_request() {
+		return current_user_can( (string) apply_filters( 'dox_care_request_cap', self::CAP ) );
+	}
+
+	/** Extensiones permitidas y su tipo real, para comprobar el contenido del archivo. */
 	public static function allowed_types() {
-		return [ 'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx', 'zip' ];
+		return [
+			'jpg|jpeg' => 'image/jpeg',
+			'png'      => 'image/png',
+			'gif'      => 'image/gif',
+			'webp'     => 'image/webp',
+			'heic'     => 'image/heic',
+			'pdf'      => 'application/pdf',
+			'doc'      => 'application/msword',
+			'docx'     => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+			'txt'      => 'text/plain',
+			'xls'      => 'application/vnd.ms-excel',
+			'xlsx'     => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			'zip'      => 'application/zip',
+		];
+	}
+
+	/** Un campo de texto del formulario; si llega como lista (page[]=x) se trata como vacío. */
+	private static function field( $key ) {
+		$v = $_POST[ $key ] ?? '';
+		return is_scalar( $v ) ? (string) wp_unslash( $v ) : '';
+	}
+
+	/** ¿La dirección es de esta misma web? */
+	private static function is_own_url( $url ) {
+		$host = wp_parse_url( $url, PHP_URL_HOST );
+		return $host && strtolower( $host ) === strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
 	}
 
 	/** Las páginas que puede elegir en el formulario. */
@@ -45,16 +78,37 @@ class Dox_Care_Requests {
 		return is_array( $log ) ? $log : [];
 	}
 
+	/** Las solicitudes del usuario que mira. Las de antes de la 0.2.2 no guardaban quién: solo las ve un administrador. */
+	public static function user_log( $user_id = 0 ) {
+		$user_id = $user_id ?: get_current_user_id();
+		$admin   = user_can( $user_id, 'manage_options' );
+		return array_values( array_filter( self::log(), function ( $r ) use ( $user_id, $admin ) {
+			return isset( $r['user_id'] ) ? (int) $r['user_id'] === (int) $user_id : $admin;
+		} ) );
+	}
+
 	public static function handle() {
-		if ( ! current_user_can( self::CAP ) ) {
+		if ( ! self::can_request() ) {
 			wp_send_json_error( [ 'message' => __( 'You are not allowed to do this.', 'dox-care' ) ], 403 );
 		}
 		check_ajax_referer( 'dox_care_request', 'nonce' );
 
-		$page    = esc_url_raw( wp_unslash( $_POST['page'] ?? '' ) );
-		$message = sanitize_textarea_field( wp_unslash( $_POST['message'] ?? '' ) );
+		$raw_page = esc_url_raw( self::field( 'page' ) );
+		$own      = $raw_page === '' || self::is_own_url( $raw_page );
+		$page     = $own ? $raw_page : '';
+		$raw_msg  = self::field( 'message' );
+		if ( mb_strlen( $raw_msg ) > self::MAX_MESSAGE ) {
+			/* translators: %s: maximum number of characters */
+			wp_send_json_error( [ 'message' => sprintf( __( 'The message is too long. Keep it under %s characters, or attach a document.', 'dox-care' ), number_format_i18n( self::MAX_MESSAGE ) ) ], 400 );
+		}
+		$message = sanitize_textarea_field( $raw_msg );
 		if ( mb_strlen( trim( $message ) ) < 5 ) {
 			wp_send_json_error( [ 'message' => __( 'Tell us what you want to change.', 'dox-care' ) ], 400 );
+		}
+		// Una dirección de fuera de la web va como texto en el mensaje, nunca como enlace.
+		if ( ! $own ) {
+			/* translators: %s: the address the user sent */
+			$message = sprintf( __( 'Page indicated: %s', 'dox-care' ), $raw_page ) . "\n\n" . $message;
 		}
 
 		// Un tope diario por web, por si alguien envía el formulario en bucle.
@@ -65,36 +119,60 @@ class Dox_Care_Requests {
 			wp_send_json_error( [ 'message' => __( 'You have sent many requests today. Write to us by email and we will take care of it.', 'dox-care' ) ], 429 );
 		}
 
-		// Adjuntos: se copian a una carpeta temporal con su nombre original.
+		// Adjuntos: se envían desde el archivo temporal de PHP (fuera de la web, y PHP
+		// lo borra al terminar la petición) con su nombre original como nombre del adjunto.
 		$attachments = [];
 		$names       = [];
-		$tmp_dir     = trailingslashit( get_temp_dir() ) . 'dox-care-' . wp_generate_password( 8, false );
-		if ( ! empty( $_FILES['files']['name'] ) && is_array( $_FILES['files']['name'] ) ) {
-			wp_mkdir_p( $tmp_dir );
-			$count = min( count( $_FILES['files']['name'] ), self::MAX_FILES );
-			for ( $i = 0; $i < $count; $i++ ) {
-				$err  = $_FILES['files']['error'][ $i ] ?? UPLOAD_ERR_NO_FILE;
-				$name = sanitize_file_name( wp_unslash( $_FILES['files']['name'][ $i ] ?? '' ) );
-				$tmp  = $_FILES['files']['tmp_name'][ $i ] ?? '';
-				$size = (int) ( $_FILES['files']['size'][ $i ] ?? 0 );
-				if ( $err !== UPLOAD_ERR_OK || ! is_uploaded_file( $tmp ) || $size > self::MAX_BYTES ) {
+		$skipped     = 0;
+		$total       = 0;
+		$files       = $_FILES['files'] ?? null;
+		if ( is_array( $files ) && isset( $files['name'] ) && is_array( $files['name'] ) ) {
+			$count = count( $files['name'] );
+			if ( $count > self::MAX_FILES ) {
+				$skipped += $count - self::MAX_FILES;
+			}
+			$mimes = self::allowed_types();
+			for ( $i = 0; $i < min( $count, self::MAX_FILES ); $i++ ) {
+				$name = $files['name'][ $i ] ?? '';
+				$tmp  = $files['tmp_name'][ $i ] ?? '';
+				$err  = $files['error'][ $i ] ?? UPLOAD_ERR_NO_FILE;
+				$size = $files['size'][ $i ] ?? 0;
+				if ( ! is_scalar( $name ) || ! is_scalar( $tmp ) || ! is_scalar( $err ) || ! is_scalar( $size ) ) {
+					$skipped++;
 					continue;
 				}
-				$ext = strtolower( pathinfo( $name, PATHINFO_EXTENSION ) );
-				if ( ! in_array( $ext, self::allowed_types(), true ) ) {
+				if ( (int) $err === UPLOAD_ERR_NO_FILE ) {
 					continue;
 				}
-				$dest = trailingslashit( $tmp_dir ) . $name;
-				if ( @move_uploaded_file( $tmp, $dest ) ) {
-					$attachments[] = $dest;
-					$names[]       = $name;
+				$name = sanitize_file_name( wp_unslash( (string) $name ) );
+				$size = (int) $size;
+				if ( (int) $err !== UPLOAD_ERR_OK || ! is_uploaded_file( $tmp ) || $size > self::MAX_BYTES || $total + $size > self::MAX_TOTAL ) {
+					$skipped++;
+					continue;
 				}
+				// Se mira el contenido, no solo la extensión: un .jpg tiene que ser una imagen.
+				$check = wp_check_filetype_and_ext( $tmp, $name, $mimes );
+				if ( empty( $check['ext'] ) || empty( $check['type'] ) ) {
+					$skipped++;
+					continue;
+				}
+				if ( ! empty( $check['proper_filename'] ) ) {
+					$name = sanitize_file_name( $check['proper_filename'] );
+				}
+				// Dos archivos con el mismo nombre se pisarían como clave.
+				$key = $name;
+				for ( $k = 2; isset( $attachments[ $key ] ); $k++ ) {
+					$key = pathinfo( $name, PATHINFO_FILENAME ) . '-' . $k . '.' . pathinfo( $name, PATHINFO_EXTENSION );
+				}
+				$attachments[ $key ] = $tmp;
+				$names[]             = $key;
+				$total              += $size;
 			}
 		}
 
 		$user  = wp_get_current_user();
 		$site  = wp_parse_url( home_url(), PHP_URL_HOST );
-		$title = self::page_title( $page );
+		$title = $own ? self::page_title( $page ) : __( 'Another page', 'dox-care' );
 
 		// Cuenta del mes (Términos, sección F): esta solicitud sería la número $n.
 		$limit = Dox_Care_Usage::limit();
@@ -135,14 +213,6 @@ class Dox_Care_Requests {
 
 		$sent = wp_mail( Dox_Care_Settings::get( 'support_email' ), $subject, $body, $headers, $attachments );
 
-		// Limpieza de la carpeta temporal, se haya enviado o no.
-		foreach ( $attachments as $file ) {
-			@unlink( $file );
-		}
-		if ( is_dir( $tmp_dir ) ) {
-			@rmdir( $tmp_dir );
-		}
-
 		if ( ! $sent ) {
 			wp_send_json_error( [ 'message' => __( 'We could not send it. Please write to us by email.', 'dox-care' ) ], 500 );
 		}
@@ -155,12 +225,18 @@ class Dox_Care_Requests {
 			'message' => mb_substr( $message, 0, 140 ),
 			'files'   => count( $names ),
 			'user'    => $user->display_name,
+			'user_id' => $user->ID,
 		] );
 		update_option( self::LOG, array_slice( $log, 0, 20 ), false );
 
 		Dox_Care_Usage::add( [ 'source' => 'form', 'page' => $title, 'message' => $message, 'units' => 1 ] );
 
-		wp_send_json_success( [ 'message' => __( 'Request sent. We will answer you by email.', 'dox-care' ) ] );
+		$done = __( 'Request sent. We will answer you by email.', 'dox-care' );
+		if ( $skipped ) {
+			/* translators: %d: number of files left out */
+			$done .= ' ' . sprintf( _n( '%d file was not attached (wrong type, too big or too many): send it to us by email.', '%d files were not attached (wrong type, too big or too many): send them to us by email.', $skipped, 'dox-care' ), $skipped );
+		}
+		wp_send_json_success( [ 'message' => $done ] );
 	}
 
 	private static function page_title( $url ) {
@@ -200,12 +276,12 @@ class Dox_Care_Requests {
 			</label>
 			<label class="dxc-field">
 				<span><?php esc_html_e( 'What do you want to change?', 'dox-care' ); ?></span>
-				<textarea name="message" rows="5" required placeholder="<?php esc_attr_e( 'Write the exact text as it should read, or describe the change.', 'dox-care' ); ?>"></textarea>
+				<textarea name="message" rows="5" required maxlength="<?php echo (int) self::MAX_MESSAGE; ?>" placeholder="<?php esc_attr_e( 'Write the exact text as it should read, or describe the change.', 'dox-care' ); ?>"></textarea>
 			</label>
 			<label class="dxc-field dxc-files">
 				<span><?php esc_html_e( 'Photos or files (optional)', 'dox-care' ); ?></span>
-				<input type="file" name="files[]" multiple accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.zip">
-				<small><?php esc_html_e( 'Up to 5 files of 10 MB each.', 'dox-care' ); ?></small>
+				<input type="file" name="files[]" multiple accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.zip" data-max-total="<?php echo (int) self::MAX_TOTAL; ?>">
+				<small><?php esc_html_e( 'Up to 5 files, 20 MB in total.', 'dox-care' ); ?></small>
 			</label>
 			<div class="dxc-form-foot">
 				<button type="submit" class="dxc-btn dxc-btn-o"><?php esc_html_e( 'Send request', 'dox-care' ); ?></button>

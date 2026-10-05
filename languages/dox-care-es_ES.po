@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-05 12:23-0400\n"
+"POT-Creation-Date: 2026-10-05 15:11-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,607 +17,675 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../dox-care.php:70
+#: dox-care.php:97
 msgid "Your care plan, site status and change requests."
 msgstr "Tu plan de cuidado, el estado de tu web y tus solicitudes de cambios."
 
-#: ../includes/class-admin-bar.php:30
+#: includes/class-admin-bar.php:30
 msgid "Request a change here"
 msgstr "Pedir un cambio aquí"
 
-#: ../includes/class-admin-bar.php:43 ../includes/class-dashboard.php:63
+#: includes/class-admin-bar.php:43 includes/class-dashboard.php:63
 msgid "Sending…"
 msgstr "Enviando…"
 
-#: ../includes/class-admin-bar.php:43 ../includes/class-dashboard.php:63
-#: ../includes/class-requests.php:147
+#: includes/class-admin-bar.php:43 includes/class-dashboard.php:63
+#: includes/class-requests.php:217
 msgid "We could not send it. Please write to us by email."
 msgstr "No pudimos enviarlo. Escríbenos por correo, por favor."
 
-#: ../includes/class-admin-bar.php:66
+#: includes/class-admin-bar.php:43 includes/class-dashboard.php:63
+msgid ""
+"The files add up to more than 20 MB. Send fewer, or share them with a link "
+"in the message."
+msgstr "Los archivos suman más de 20 MB. Envía menos, o compártelos con un enlace en el mensaje."
+
+#: includes/class-admin-bar.php:66
 msgid "Close"
 msgstr "Cerrar"
 
-#: ../includes/class-admin-bar.php:68
+#: includes/class-admin-bar.php:68
 msgid "Request a change"
 msgstr "Pedir un cambio"
 
-#: ../includes/class-admin-bar.php:69
+#: includes/class-admin-bar.php:69
 msgid "Tell us what to change on this page and we take care of it."
 msgstr "Cuéntanos qué cambiar en esta página y nosotros nos encargamos."
 
-#: ../includes/class-dashboard.php:35
+#: includes/class-dashboard.php:35
 msgid "Home"
 msgstr "Inicio"
 
-#: ../includes/class-dashboard.php:101
+#: includes/class-dashboard.php:101
 msgid "Support:"
 msgstr "Soporte:"
 
-#: ../includes/class-dashboard.php:107
+#: includes/class-dashboard.php:107
 msgid "More information"
 msgstr "Más información"
 
 #. translators: %s: plan name
-#: ../includes/class-dashboard.php:114
+#: includes/class-dashboard.php:114
 #, php-format
 msgid "Your website is covered by %s."
 msgstr "Tu web está cubierta por %s."
 
-#: ../includes/class-dashboard.php:115
+#: includes/class-dashboard.php:115
 msgid "Updates, security, backups and support."
 msgstr "Actualizaciones, seguridad, copias de seguridad y soporte."
 
-#: ../includes/class-dashboard.php:116
+#: includes/class-dashboard.php:116
 msgid "What’s included"
 msgstr "Ver qué incluye"
 
 #. translators: %s: client name
-#: ../includes/class-dashboard.php:122
+#: includes/class-dashboard.php:122
 #, php-format
 msgid "Hi, %s"
 msgstr "Hola, %s"
 
-#: ../includes/class-dashboard.php:124
-msgid "From here you can request changes, check your account and find what you need. We take care of the rest."
-msgstr "Desde aquí pides cambios, revisas tu cuenta y encuentras lo que necesitas. Nosotros nos encargamos del resto."
+#: includes/class-dashboard.php:124
+msgid ""
+"From here you can request changes, check your account and find what you "
+"need. We take care of the rest."
+msgstr ""
+"Desde aquí pides cambios, revisas tu cuenta y encuentras lo que necesitas. "
+"Nosotros nos encargamos del resto."
 
-#: ../includes/class-dashboard.php:129
+#: includes/class-dashboard.php:129
 msgid "Changes"
 msgstr "Cambios"
 
-#: ../includes/class-dashboard.php:130
+#: includes/class-dashboard.php:130
 msgid "Need to change something on your website?"
 msgstr "¿Necesitas cambiar algo en tu web?"
 
 #. translators: %s: what the plan includes, e.g. "up to 3 content or design updates per month"
-#: ../includes/class-dashboard.php:133
+#: includes/class-dashboard.php:133
 #, php-format
 msgid "Your plan includes <strong>%s</strong>. Tell us here and we do it."
-msgstr "Tu plan incluye <strong>%s</strong>. Cuéntanos aquí y nosotros lo hacemos."
+msgstr ""
+"Tu plan incluye <strong>%s</strong>. Cuéntanos aquí y nosotros lo hacemos."
 
 #. translators: %s: first day of next month
-#: ../includes/class-dashboard.php:147
+#: includes/class-dashboard.php:147
 #, php-format
-msgid "New requests this month are quoted separately. Your updates renew on %s."
-msgstr "Las nuevas solicitudes de este mes se cotizan aparte. Tus actualizaciones se renuevan el %s."
+msgid ""
+"New requests this month are quoted separately. Your updates renew on %s."
+msgstr ""
+"Las nuevas solicitudes de este mes se cotizan aparte. Tus actualizaciones se "
+"renuevan el %s."
 
-#: ../includes/class-dashboard.php:152
+#: includes/class-dashboard.php:153
 msgid "You can also"
 msgstr "También puedes"
 
-#: ../includes/class-dashboard.php:152
+#: includes/class-dashboard.php:153
 msgid "open a ticket"
 msgstr "abrir un ticket"
 
-#: ../includes/class-dashboard.php:152
+#: includes/class-dashboard.php:153
 msgid "or write to"
 msgstr "o escribir a"
 
-#: ../includes/class-dashboard.php:155
+#: includes/class-dashboard.php:155
+msgid ""
+"Changes are requested by the owner or an editor of the website. Ask them, or "
+"write to"
+msgstr "Los cambios los pide el dueño o un editor de la web. Pídeselo a ellos, o escribe a"
+
+#: includes/class-dashboard.php:159
 msgid "Your latest requests"
 msgstr "Tus últimas solicitudes"
 
-#: ../includes/class-dashboard.php:166
+#: includes/class-dashboard.php:170
 msgid "Your account"
 msgstr "Tu cuenta"
 
-#: ../includes/class-dashboard.php:167
+#: includes/class-dashboard.php:171
 msgid "Your whole service in one place"
 msgstr "Todo tu servicio en un solo lugar"
 
-#: ../includes/class-dashboard.php:169
+#: includes/class-dashboard.php:173
 msgid "Invoices and payments"
 msgstr "Facturas y pagos"
 
-#: ../includes/class-dashboard.php:170
+#: includes/class-dashboard.php:174
 msgid "Your plan and its renewal"
 msgstr "Tu plan y su renovación"
 
-#: ../includes/class-dashboard.php:171
+#: includes/class-dashboard.php:175
 msgid "Domains and email"
 msgstr "Dominios y correos"
 
-#: ../includes/class-dashboard.php:172
+#: includes/class-dashboard.php:176
 msgid "Your support tickets"
 msgstr "Tus tickets de soporte"
 
-#: ../includes/class-dashboard.php:174
+#: includes/class-dashboard.php:178
 msgid "Go to my account"
 msgstr "Ir a mi cuenta"
 
-#: ../includes/class-dashboard.php:177
+#: includes/class-dashboard.php:181
 msgid "Your website today"
 msgstr "Tu web hoy"
 
-#: ../includes/class-dashboard.php:189
+#: includes/class-dashboard.php:193
 msgid "Your plan"
 msgstr "Tu plan"
 
 #. translators: %s: plan name
-#: ../includes/class-dashboard.php:192
+#: includes/class-dashboard.php:196
 #, php-format
 msgid "What your %s includes"
 msgstr "Lo que incluye tu %s"
 
-#: ../includes/class-dashboard.php:204
+#: includes/class-dashboard.php:208
 msgid "Do it yourself"
 msgstr "Hazlo tú"
 
-#: ../includes/class-dashboard.php:205
+#: includes/class-dashboard.php:209
 msgid "What you can solve in a minute"
 msgstr "Lo que puedes resolver en un minuto"
 
-#: ../includes/class-dashboard.php:207
+#: includes/class-dashboard.php:211
 msgid "Download your invoices"
 msgstr "Descarga tus facturas"
 
-#: ../includes/class-dashboard.php:207
+#: includes/class-dashboard.php:211
 msgid "All your invoices and payments, in PDF."
 msgstr "Todas tus facturas y pagos, en PDF."
 
-#: ../includes/class-dashboard.php:208
+#: includes/class-dashboard.php:212
 msgid "Open your email"
 msgstr "Entra a tu correo"
 
-#: ../includes/class-dashboard.php:208
+#: includes/class-dashboard.php:212
 msgid "Webmail for your business email accounts."
 msgstr "El webmail de tus cuentas de correo de empresa."
 
-#: ../includes/class-dashboard.php:209
+#: includes/class-dashboard.php:213
 msgid "Check your tickets"
 msgstr "Revisa tus tickets"
 
-#: ../includes/class-dashboard.php:209
+#: includes/class-dashboard.php:213
 msgid "What you asked us for and how it is going."
 msgstr "Lo que nos has pedido y en qué va."
 
-#: ../includes/class-dashboard.php:210
+#: includes/class-dashboard.php:214
 msgid "Server status"
 msgstr "Estado de los servidores"
 
-#: ../includes/class-dashboard.php:210
+#: includes/class-dashboard.php:214
 msgid "Something slow? See if there is an incident."
 msgstr "¿Algo va lento? Mira si hay alguna incidencia."
 
-#: ../includes/class-dashboard.php:215
+#: includes/class-dashboard.php:219
 msgid "Want more?"
 msgstr "¿Quieres más?"
 
-#: ../includes/class-dashboard.php:216
+#: includes/class-dashboard.php:220
 msgid "Continuous improvements for your website"
 msgstr "Mejoras continuas para tu web"
 
-#: ../includes/class-dashboard.php:219
+#: includes/class-dashboard.php:223
 msgid "/mo"
 msgstr "/mes"
 
-#: ../includes/class-dashboard.php:222
+#: includes/class-dashboard.php:226
 msgid "See plans"
 msgstr "Ver planes"
 
-#: ../includes/class-dashboard.php:227
+#: includes/class-dashboard.php:231
 msgid "Classic WordPress dashboard"
 msgstr "Escritorio clásico de WordPress"
 
-#: ../includes/class-plans.php:19
+#: includes/class-plans.php:19
 msgid "Included in your Dox Studio hosting"
 msgstr "Incluido en tu hosting de Dox Studio"
 
-#: ../includes/class-plans.php:20
+#: includes/class-plans.php:20
 msgid "up to 3 content or design updates per month"
 msgstr "hasta 3 actualizaciones de contenido o diseño al mes"
 
-#: ../includes/class-plans.php:23
+#: includes/class-plans.php:23
 msgid "Up to 3 content or design updates per month"
 msgstr "Hasta 3 actualizaciones de contenido o diseño al mes"
 
-#: ../includes/class-plans.php:24
+#: includes/class-plans.php:24
 msgid "WordPress core updates"
 msgstr "Actualizaciones del núcleo de WordPress"
 
-#: ../includes/class-plans.php:25
+#: includes/class-plans.php:25
 msgid "Theme and plugin updates"
 msgstr "Actualizaciones de temas y plugins"
 
-#: ../includes/class-plans.php:26
+#: includes/class-plans.php:26
 msgid "Real-time security and firewall"
 msgstr "Seguridad y cortafuegos en tiempo real"
 
-#: ../includes/class-plans.php:28
+#: includes/class-plans.php:28
 msgid "Daily backups"
 msgstr "Copias de seguridad diarias"
 
-#: ../includes/class-plans.php:29
+#: includes/class-plans.php:29
 msgid "Malware and virus removal"
 msgstr "Eliminación de malware y virus"
 
-#: ../includes/class-plans.php:30
+#: includes/class-plans.php:30
 msgid "Content delivery network (CDN)"
 msgstr "Red de entrega de contenido (CDN)"
 
-#: ../includes/class-plans.php:37 ../includes/class-plans.php:55
+#: includes/class-plans.php:37 includes/class-plans.php:55
 msgid "unlimited design and content updates"
 msgstr "actualizaciones ilimitadas de diseño y contenido"
 
-#: ../includes/class-plans.php:38
+#: includes/class-plans.php:38
 msgid "Unlimited changes, speed optimization, analytics and monthly reports."
-msgstr "Cambios ilimitados, optimización de velocidad, analíticas e informes mensuales."
+msgstr ""
+"Cambios ilimitados, optimización de velocidad, analíticas e informes "
+"mensuales."
 
-#: ../includes/class-plans.php:40
+#: includes/class-plans.php:40
 msgid "Everything in Essentials Care"
 msgstr "Todo lo de Essentials Care"
 
-#: ../includes/class-plans.php:41
+#: includes/class-plans.php:41
 msgid "Unlimited design and content updates"
 msgstr "Actualizaciones ilimitadas de diseño y contenido"
 
-#: ../includes/class-plans.php:42
+#: includes/class-plans.php:42
 msgid "Website speed optimization"
 msgstr "Optimización de velocidad de la web"
 
-#: ../includes/class-plans.php:43
+#: includes/class-plans.php:43
 msgid "Unlimited image optimization"
 msgstr "Optimización ilimitada de imágenes"
 
-#: ../includes/class-plans.php:45
+#: includes/class-plans.php:45
 msgid "2 developer hours per month"
 msgstr "2 horas de desarrollador al mes"
 
-#: ../includes/class-plans.php:46
+#: includes/class-plans.php:46
 msgid "Daily cloud backups, 30-day archive"
 msgstr "Copias diarias en la nube, con archivo de 30 días"
 
-#: ../includes/class-plans.php:47
+#: includes/class-plans.php:47
 msgid "24/7 uptime monitoring"
 msgstr "Monitoreo 24/7 de que la web esté en línea"
 
-#: ../includes/class-plans.php:48
+#: includes/class-plans.php:48
 msgid "Website analytics and monthly reports"
 msgstr "Analíticas de la web e informes mensuales"
 
-#: ../includes/class-plans.php:56
+#: includes/class-plans.php:56
 msgid "Proactive optimization, SEO audit, a monthly call and priority support."
-msgstr "Optimización proactiva, auditoría SEO, llamada mensual y soporte prioritario."
+msgstr ""
+"Optimización proactiva, auditoría SEO, llamada mensual y soporte prioritario."
 
-#: ../includes/class-plans.php:58
+#: includes/class-plans.php:58
 msgid "Everything in Pro Care"
 msgstr "Todo lo de Pro Care"
 
-#: ../includes/class-plans.php:59
+#: includes/class-plans.php:59
 msgid "5 developer hours per month"
 msgstr "5 horas de desarrollador al mes"
 
-#: ../includes/class-plans.php:60
+#: includes/class-plans.php:60
 msgid "Speed and Core Web Vitals optimization"
 msgstr "Optimización de velocidad y Core Web Vitals"
 
-#: ../includes/class-plans.php:61
+#: includes/class-plans.php:61
 msgid "Automatic PNG/JPG to WebP conversion"
 msgstr "Conversión automática de PNG/JPG a WebP"
 
-#: ../includes/class-plans.php:62
+#: includes/class-plans.php:62
 msgid "Monthly strategy call (30 min)"
 msgstr "Llamada estratégica mensual (30 min)"
 
-#: ../includes/class-plans.php:63
+#: includes/class-plans.php:63
 msgid "Technical SEO audit"
 msgstr "Auditoría técnica de SEO"
 
-#: ../includes/class-plans.php:64
+#: includes/class-plans.php:64
 msgid "Priority chat support"
 msgstr "Soporte prioritario por chat"
 
-#: ../includes/class-plans.php:65
+#: includes/class-plans.php:65
 msgid "Weekly reports"
 msgstr "Informes semanales"
 
-#: ../includes/class-requests.php:31 ../includes/class-requests.php:171
+#: includes/class-requests.php:64 includes/class-requests.php:247
 msgid "Home page"
 msgstr "Página de inicio"
 
-#: ../includes/class-requests.php:38
+#: includes/class-requests.php:71
 msgid "(no title)"
 msgstr "(sin título)"
 
-#: ../includes/class-requests.php:50
+#: includes/class-requests.php:92
 msgid "You are not allowed to do this."
 msgstr "No tienes permiso para hacer esto."
 
-#: ../includes/class-requests.php:57
+#. translators: %s: maximum number of characters
+#: includes/class-requests.php:102
+#, php-format
+msgid ""
+"The message is too long. Keep it under %s characters, or attach a document."
+msgstr "El mensaje es demasiado largo. Déjalo en menos de %s caracteres, o adjunta un documento."
+
+#: includes/class-requests.php:106
 msgid "Tell us what you want to change."
 msgstr "Cuéntanos qué quieres cambiar."
 
-#: ../includes/class-requests.php:65
-msgid "You have sent many requests today. Write to us by email and we will take care of it."
-msgstr "Hoy has enviado muchas solicitudes. Escríbenos por correo y nos encargamos."
+#. translators: %s: the address the user sent
+#: includes/class-requests.php:111
+#, php-format
+msgid "Page indicated: %s"
+msgstr "Página indicada: %s"
+
+#: includes/class-requests.php:119
+msgid ""
+"You have sent many requests today. Write to us by email and we will take "
+"care of it."
+msgstr ""
+"Hoy has enviado muchas solicitudes. Escríbenos por correo y nos encargamos."
+
+#: includes/class-requests.php:175
+msgid "Another page"
+msgstr "Otra página"
 
 #. translators: 1: site domain, 2: page title
-#: ../includes/class-requests.php:105
+#: includes/class-requests.php:183
 #, php-format
 msgid "[Dox Care] Change on %1$s: %2$s"
 msgstr "[Dox Care] Cambio en %1$s: %2$s"
 
-#: ../includes/class-requests.php:107
+#: includes/class-requests.php:185
 msgid "[Outside the plan]"
 msgstr "[Fuera del plan]"
 
-#: ../includes/class-requests.php:111
+#: includes/class-requests.php:189
 msgid "Website"
 msgstr "Web"
 
-#: ../includes/class-requests.php:112 ../includes/class-settings.php:229
-#: ../includes/class-settings.php:262
+#: includes/class-requests.php:190 includes/class-settings.php:301
+#: includes/class-settings.php:334
 msgid "Page"
 msgstr "Página"
 
-#: ../includes/class-requests.php:113
+#: includes/class-requests.php:191
 msgid "Requested by"
 msgstr "Pedido por"
 
-#: ../includes/class-requests.php:114
+#: includes/class-requests.php:192
 msgid "Plan"
 msgstr "Plan"
 
-#: ../includes/class-requests.php:115
+#: includes/class-requests.php:193
 msgid "Attachments"
 msgstr "Adjuntos"
 
-#: ../includes/class-requests.php:115
+#: includes/class-requests.php:193
 msgid "None"
 msgstr "Ninguno"
 
-#: ../includes/class-requests.php:116
+#: includes/class-requests.php:194
 msgid "This month"
 msgstr "Este mes"
 
 #. translators: %d: request number this month
-#: ../includes/class-requests.php:118
+#: includes/class-requests.php:196
 #, php-format
 msgid "Request number %d (unlimited plan)"
 msgstr "Solicitud número %d (plan ilimitado)"
 
 #. translators: 1: update number, 2: included per month
-#: ../includes/class-requests.php:120
+#: includes/class-requests.php:198
 #, php-format
 msgid "Update %1$d of %2$d: outside the plan, quote it separately"
 msgstr "Actualización %1$d de %2$d: fuera del plan, cotizar aparte"
 
-#: ../includes/class-requests.php:120
+#: includes/class-requests.php:198
 #, php-format
 msgid "Update %1$d of %2$d"
 msgstr "Actualización %1$d de %2$d"
 
-#: ../includes/class-requests.php:123
+#: includes/class-requests.php:201
 msgid "New change request"
 msgstr "Nueva solicitud de cambio"
 
-#: ../includes/class-requests.php:129
-msgid "Sent from the Dox Care dashboard. Reply to this email to answer the client."
-msgstr "Enviado desde el escritorio de Dox Care. Responde a este correo para contestar al cliente."
+#: includes/class-requests.php:207
+msgid ""
+"Sent from the Dox Care dashboard. Reply to this email to answer the client."
+msgstr ""
+"Enviado desde el escritorio de Dox Care. Responde a este correo para "
+"contestar al cliente."
 
-#: ../includes/class-requests.php:163
+#: includes/class-requests.php:234
 msgid "Request sent. We will answer you by email."
 msgstr "Solicitud enviada. Te responderemos por correo."
 
-#: ../includes/class-requests.php:168
+#. translators: %d: number of files left out
+#: includes/class-requests.php:237
+#, php-format
+msgid ""
+"%d file was not attached (wrong type, too big or too many): send it to us by "
+"email."
+msgid_plural ""
+"%d files were not attached (wrong type, too big or too many): send them to "
+"us by email."
+msgstr[0] "%d archivo no se adjuntó (tipo no permitido, demasiado grande o de más): envíanoslo por correo."
+msgstr[1] "%d archivos no se adjuntaron (tipo no permitido, demasiado grandes o de más): envíanoslos por correo."
+
+#: includes/class-requests.php:244
 msgid "The whole website"
 msgstr "Toda la web"
 
-#: ../includes/class-requests.php:190
+#: includes/class-requests.php:266
 msgid "Which page?"
 msgstr "¿Qué página?"
 
-#: ../includes/class-requests.php:198
+#: includes/class-requests.php:274
 msgid "The whole website / another one"
 msgstr "Toda la web u otra página"
 
-#: ../includes/class-requests.php:202
+#: includes/class-requests.php:278
 msgid "What do you want to change?"
 msgstr "¿Qué quieres cambiar?"
 
-#: ../includes/class-requests.php:203
+#: includes/class-requests.php:279
 msgid "Write the exact text as it should read, or describe the change."
 msgstr "Escribe el texto exacto tal como debe quedar, o describe el cambio."
 
-#: ../includes/class-requests.php:206
+#: includes/class-requests.php:282
 msgid "Photos or files (optional)"
 msgstr "Fotos o archivos (opcional)"
 
-#: ../includes/class-requests.php:208
-msgid "Up to 5 files of 10 MB each."
-msgstr "Hasta 5 archivos de 10 MB cada uno."
+#: includes/class-requests.php:284
+msgid "Up to 5 files, 20 MB in total."
+msgstr "Hasta 5 archivos, 20 MB en total."
 
-#: ../includes/class-requests.php:211
+#: includes/class-requests.php:287
 msgid "Send request"
 msgstr "Enviar solicitud"
 
-#: ../includes/class-settings.php:79
+#: includes/class-settings.php:82
 msgid "Only Dox Studio can change this."
 msgstr "Solo Dox Studio puede cambiar esto."
 
 #. translators: %s: plan name
-#: ../includes/class-settings.php:139
+#: includes/class-settings.php:211
 #, php-format
 msgid "Your plan: %s."
 msgstr "Tu plan: %s."
 
-#: ../includes/class-settings.php:141 ../includes/class-settings.php:192
+#: includes/class-settings.php:213 includes/class-settings.php:264
 msgid "See the dashboard"
 msgstr "Ver el escritorio"
 
-#: ../includes/class-settings.php:150
+#: includes/class-settings.php:222
 msgid "Settings saved."
 msgstr "Ajustes guardados."
 
-#: ../includes/class-settings.php:157
+#: includes/class-settings.php:229
 msgid "Care plan"
 msgstr "Plan de cuidado"
 
-#: ../includes/class-settings.php:164
-msgid "The plan this client has. It decides what the dashboard says is included."
-msgstr "El plan que tiene este cliente. Decide lo que el escritorio dice que incluye."
+#: includes/class-settings.php:236
+msgid ""
+"The plan this client has. It decides what the dashboard says is included."
+msgstr ""
+"El plan que tiene este cliente. Decide lo que el escritorio dice que incluye."
 
-#: ../includes/class-settings.php:168
+#: includes/class-settings.php:240
 msgid "Client name"
 msgstr "Nombre del cliente"
 
-#: ../includes/class-settings.php:171
-msgid "Optional. Used in the greeting; if empty, the name of the logged-in user is used."
-msgstr "Opcional. Se usa en el saludo; si está vacío, se usa el nombre del usuario que entra."
+#: includes/class-settings.php:243
+msgid ""
+"Optional. Used in the greeting; if empty, the name of the logged-in user is "
+"used."
+msgstr ""
+"Opcional. Se usa en el saludo; si está vacío, se usa el nombre del usuario "
+"que entra."
 
-#: ../includes/class-settings.php:175
+#: includes/class-settings.php:247
 msgid "Language"
 msgstr "Idioma"
 
-#: ../includes/class-settings.php:178
+#: includes/class-settings.php:250
 msgid "Automatic (each user’s language)"
 msgstr "Automático (el idioma de cada usuario)"
 
-#: ../includes/class-settings.php:185
+#: includes/class-settings.php:257
 msgid "Requests go to"
 msgstr "Las solicitudes llegan a"
 
-#: ../includes/class-settings.php:208
+#: includes/class-settings.php:261 includes/class-settings.php:325
+msgid "Save changes"
+msgstr "Guardar cambios"
+
+#: includes/class-settings.php:280
 msgid "Updates"
 msgstr "Actualizaciones"
 
 #. translators: %d: requests
-#: ../includes/class-settings.php:218
+#: includes/class-settings.php:290
 #, php-format
 msgid "%d requests (unlimited plan)"
 msgstr "%d solicitudes (plan ilimitado)"
 
 #. translators: 1: used, 2: included
-#: ../includes/class-settings.php:220
+#: includes/class-settings.php:292
 #, php-format
 msgid "%1$d of %2$d updates used"
 msgstr "%1$d de %2$d actualizaciones usadas"
 
-#: ../includes/class-settings.php:221
-msgid "Each request from the form counts 1. Set 0 if it was a fix on our side, or 2 if it covered two pages."
-msgstr "Cada solicitud del formulario cuenta 1. Pon 0 si era un arreglo nuestro, o 2 si abarcaba dos páginas."
+#: includes/class-settings.php:293
+msgid ""
+"Each request from the form counts 1. Set 0 if it was a fix on our side, or 2 "
+"if it covered two pages."
+msgstr ""
+"Cada solicitud del formulario cuenta 1. Pon 0 si era un arreglo nuestro, o 2 "
+"si abarcaba dos páginas."
 
-#: ../includes/class-settings.php:228 ../includes/class-settings.php:261
+#: includes/class-settings.php:300 includes/class-settings.php:333
 msgid "Date"
 msgstr "Fecha"
 
-#: ../includes/class-settings.php:230
+#: includes/class-settings.php:302
 msgid "Request"
 msgstr "Solicitud"
 
-#: ../includes/class-settings.php:231
+#: includes/class-settings.php:303
 msgid "Source"
 msgstr "Origen"
 
-#: ../includes/class-settings.php:232 ../includes/class-settings.php:264
+#: includes/class-settings.php:304 includes/class-settings.php:336
 msgid "Counts"
 msgstr "Cuenta"
 
-#: ../includes/class-settings.php:233 ../includes/class-settings.php:265
+#: includes/class-settings.php:305 includes/class-settings.php:337
 msgid "Note"
 msgstr "Nota"
 
-#: ../includes/class-settings.php:234
+#: includes/class-settings.php:306
 msgid "Delete"
 msgstr "Borrar"
 
-#: ../includes/class-settings.php:238
+#: includes/class-settings.php:310
 msgid "No updates this month."
 msgstr "No hay actualizaciones este mes."
 
-#: ../includes/class-settings.php:245
+#: includes/class-settings.php:317
 msgid "Added by hand"
 msgstr "Añadida a mano"
 
-#: ../includes/class-settings.php:245
+#: includes/class-settings.php:317
 msgid "Form"
 msgstr "Formulario"
 
-#: ../includes/class-settings.php:253
-msgid "Save changes"
-msgstr "Guardar cambios"
-
-#: ../includes/class-settings.php:255
+#: includes/class-settings.php:327
 msgid "Add an update by hand"
 msgstr "Añadir una actualización a mano"
 
-#: ../includes/class-settings.php:256
+#: includes/class-settings.php:328
 msgid "For changes that came by email or ticket."
 msgstr "Para los cambios que llegaron por correo o por ticket."
 
-#: ../includes/class-settings.php:263
+#: includes/class-settings.php:335
 msgid "What was changed"
 msgstr "Qué se cambió"
 
-#: ../includes/class-settings.php:267
+#: includes/class-settings.php:339
 msgid "Add update"
 msgstr "Añadir actualización"
 
-#: ../includes/class-status.php:80 ../includes/class-status.php:84
+#: includes/class-status.php:80 includes/class-status.php:84
 msgid "Secure connection (SSL)"
 msgstr "Conexión segura (SSL)"
 
-#: ../includes/class-status.php:80
+#: includes/class-status.php:80
 msgid "Active"
 msgstr "Activa"
 
-#: ../includes/class-status.php:80
+#: includes/class-status.php:80
 msgid "We are checking it"
 msgstr "La estamos revisando"
 
 #. translators: %s: date the SSL certificate renews
-#: ../includes/class-status.php:86
+#: includes/class-status.php:86
 #, php-format
 msgid "Active, renews automatically before %s"
 msgstr "Activa, se renueva sola antes del %s"
 
-#: ../includes/class-status.php:86
+#: includes/class-status.php:86
 msgid "Renewing in the next few days"
 msgstr "Se renueva en los próximos días"
 
-#: ../includes/class-status.php:93
+#: includes/class-status.php:93
 msgid "WordPress, theme and plugins"
 msgstr "WordPress, tema y plugins"
 
-#: ../includes/class-status.php:94
+#: includes/class-status.php:94
 msgid "Everything is up to date"
 msgstr "Todo está al día"
 
-#: ../includes/class-status.php:94
+#: includes/class-status.php:94
 msgid "We apply the pending updates in your next maintenance"
 msgstr "Aplicamos las actualizaciones pendientes en tu próximo mantenimiento"
 
-#: ../includes/class-status.php:100
+#: includes/class-status.php:100
 msgid "Last published change"
 msgstr "Último cambio publicado"
 
-#: ../includes/class-status.php:101
+#: includes/class-status.php:101
 msgid "No changes yet"
 msgstr "Todavía no hay cambios"
 
 #. translators: %d: number of requests this month
-#: ../includes/class-usage.php:113
+#: includes/class-usage.php:117
 #, php-format
 msgid "This month: %d request (your plan has unlimited updates)"
 msgid_plural "This month: %d requests (your plan has unlimited updates)"
@@ -625,7 +693,7 @@ msgstr[0] "Este mes: %d solicitud (tu plan tiene actualizaciones ilimitadas)"
 msgstr[1] "Este mes: %d solicitudes (tu plan tiene actualizaciones ilimitadas)"
 
 #. translators: 1: updates used, 2: updates included per month
-#: ../includes/class-usage.php:116
+#: includes/class-usage.php:120
 #, php-format
 msgid "This month: %1$d of %2$d updates used"
 msgstr "Este mes: %1$d de %2$d actualizaciones usadas"

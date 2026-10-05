@@ -18,7 +18,7 @@ class Dox_Care_Admin_Bar {
 	}
 
 	private static function active() {
-		return ! is_admin() && is_admin_bar_showing() && current_user_can( Dox_Care_Requests::CAP );
+		return ! is_admin() && is_admin_bar_showing() && Dox_Care_Requests::can_request();
 	}
 
 	public static function node( $bar ) {
@@ -40,7 +40,7 @@ class Dox_Care_Admin_Bar {
 		wp_enqueue_style( 'dox-care-fonts', 'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Poppins:wght@500;600&display=swap', [], null );
 		wp_enqueue_style( 'dox-care', DOX_CARE_URL . 'assets/dox-care.css', [], DOX_CARE_VERSION );
 		wp_enqueue_script( 'dox-care', DOX_CARE_URL . 'assets/dox-care.js', [], DOX_CARE_VERSION, true );
-		wp_localize_script( 'dox-care', 'DoxCare', [ 'ajax' => admin_url( 'admin-ajax.php' ), 'sending' => __( 'Sending…', 'dox-care' ), 'error' => __( 'We could not send it. Please write to us by email.', 'dox-care' ) ] );
+		wp_localize_script( 'dox-care', 'DoxCare', [ 'ajax' => admin_url( 'admin-ajax.php' ), 'sending' => __( 'Sending…', 'dox-care' ), 'error' => __( 'We could not send it. Please write to us by email.', 'dox-care' ), 'tooBig' => __( 'The files add up to more than 20 MB. Send fewer, or share them with a link in the message.', 'dox-care' ) ] );
 	}
 
 	/** La página que se está viendo, sin parámetros de seguimiento. */

@@ -4,7 +4,7 @@
  * Plugin URI:  https://doxstudio.com/es/mantenimiento-web/
  * Update URI:  https://github.com/davidzoque/dox-care
  * Description: Your website care plan with Dox Studio: a dashboard with your plan, your site status and a one-click way to request changes.
- * Version:     0.2.1
+ * Version:     0.2.2
  * Author:      Dox Studio
  * Author URI:  https://doxstudio.com
  * License:     GPL-2.0+
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'DOX_CARE_VERSION', '0.2.1' );
+define( 'DOX_CARE_VERSION', '0.2.2' );
 define( 'DOX_CARE_FILE', __FILE__ );
 define( 'DOX_CARE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'DOX_CARE_URL', plugin_dir_url( __FILE__ ) );
@@ -27,6 +27,11 @@ define( 'DOX_CARE_URL', plugin_dir_url( __FILE__ ) );
 // clientes y los precios vigentes de los planes. Se puede cambiar en wp-config.php.
 if ( ! defined( 'DOX_CARE_FEED' ) ) {
 	define( 'DOX_CARE_FEED', 'https://doxstudio.com/dox-care.json' );
+}
+
+// A dónde llegan los avisos de cambios en los ajustes y en el contador.
+if ( ! defined( 'DOX_CARE_ALERT_TO' ) ) {
+	define( 'DOX_CARE_ALERT_TO', 'support@doxstudio.com' );
 }
 
 // Actualizaciones automáticas desde las releases de GitHub (Plugin Update Checker),
@@ -77,6 +82,7 @@ add_action( 'init', function () {
 
 add_action( 'plugins_loaded', function () {
 	Dox_Care_Settings::init();
+	Dox_Care_Feed::init();
 	Dox_Care_Dashboard::init();
 	Dox_Care_Requests::init();
 	Dox_Care_Admin_Bar::init();
@@ -106,4 +112,8 @@ register_activation_hook( __FILE__, function () {
 		$ac['wp_custom_dash'] = 'false';
 		update_option( 'uicore_theme_options_admin_customizer', $ac );
 	}
+} );
+
+register_deactivation_hook( __FILE__, function () {
+	wp_clear_scheduled_hook( Dox_Care_Feed::HOOK );
 } );

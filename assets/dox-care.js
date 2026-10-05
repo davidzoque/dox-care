@@ -10,6 +10,18 @@
 			text.focus();
 			return;
 		}
+		// El mismo tope que el servidor, para avisar antes de subir nada.
+		var input = form.querySelector('input[type="file"]');
+		var max = input ? parseInt(input.getAttribute('data-max-total'), 10) : 0;
+		if (input && max) {
+			var total = 0;
+			for (var i = 0; i < input.files.length; i++) { total += input.files[i].size; }
+			if (total > max) {
+				msg.className = 'dxc-form-msg is-error';
+				msg.textContent = DoxCare.tooBig;
+				return;
+			}
+		}
 		btn.disabled = true;
 		msg.className = 'dxc-form-msg';
 		msg.textContent = DoxCare.sending;

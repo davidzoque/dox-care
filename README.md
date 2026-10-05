@@ -5,14 +5,16 @@ Plugin de WordPress de Dox Studio para las webs de sus clientes de hosting y man
 ## Qué hace
 
 - **Escritorio propio dentro del panel.** Al entrar a WordPress se ve el escritorio de Dox Care en lugar del de siempre: el plan del cliente, el estado de su web, su cuenta en clients.doxstudio.com, lo que puede resolver solo y los planes superiores. El escritorio clásico sigue en `index.php?dox_classic=1`.
-- **Pedir un cambio.** Formulario (página, texto exacto y hasta 5 archivos de 10 MB) que llega por correo a support@doxstudio.com, con Reply-To del cliente. También desde la barra superior de la web ("Pedir un cambio aquí"), con la página que se está viendo ya elegida.
+- **Pedir un cambio.** Formulario (página de la web, texto de hasta 5.000 caracteres y hasta 5 archivos, 20 MB en total, comprobando que su contenido es del tipo que dice) que llega por correo a support@doxstudio.com, con Reply-To del cliente. Lo pueden usar Editor y Administrador (filtro `dox_care_request_cap` para abrirlo a otros roles), hasta 5 solicitudes al día por web, y cada usuario ve solo las suyas. También desde la barra superior de la web ("Pedir un cambio aquí"), con la página que se está viendo ya elegida.
 - **Contador de actualizaciones del mes**, según la sección F de los Términos del Servicio: cada solicitud cuenta 1; Dox Studio la ajusta y añade a mano las que llegan por correo o ticket. El cliente ve "Este mes: X de 3".
 - **Estado de la web** leído de la propia web: SSL y su renovación, actualizaciones pendientes y último cambio publicado.
-- **Aviso central**: lee `https://doxstudio.com/dox-care.json` cada 6 horas (avisos para todos los clientes y precios de los planes). Se puede cambiar con la constante `DOX_CARE_FEED` en wp-config.php.
+- **Aviso central**: el cron de WordPress lee `https://doxstudio.com/dox-care.json` dos veces al día y el escritorio pinta lo guardado, sin esperar nunca a doxstudio.com (avisos para todos los clientes y precios de los planes). Se puede cambiar con la constante `DOX_CARE_FEED` en wp-config.php.
 
 ## Ajustes
 
 En **Dox Plugins > Dox Care**: plan, nombre del cliente, idioma (automático, español o inglés) y correo de soporte, más la tabla del contador. Solo los cambia el equipo de Dox Studio (usuario `support` o correo @doxstudio.com / @paradoxstudio.co); el cliente solo ve su plan y su contador. Se puede ampliar con el filtro `dox_care_is_staff`.
+
+**Ojo: esto no frena a un administrador del sitio** (puede crearse un usuario @doxstudio.com o ejecutar código). Por eso cada cambio de los ajustes o del contador manda un aviso a `DOX_CARE_ALERT_TO` (support@doxstudio.com por defecto) con quién lo hizo, y el contador de la web informa al cliente pero no vale como prueba de lo consumido.
 
 ## Estructura
 

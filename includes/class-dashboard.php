@@ -60,7 +60,7 @@ class Dox_Care_Dashboard {
 		wp_enqueue_style( 'dox-care-fonts', 'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Poppins:wght@500;600&display=swap', [], null );
 		wp_enqueue_style( 'dox-care', DOX_CARE_URL . 'assets/dox-care.css', [], DOX_CARE_VERSION );
 		wp_enqueue_script( 'dox-care', DOX_CARE_URL . 'assets/dox-care.js', [], DOX_CARE_VERSION, true );
-		wp_localize_script( 'dox-care', 'DoxCare', [ 'ajax' => admin_url( 'admin-ajax.php' ), 'sending' => __( 'Sending…', 'dox-care' ), 'error' => __( 'We could not send it. Please write to us by email.', 'dox-care' ) ] );
+		wp_localize_script( 'dox-care', 'DoxCare', [ 'ajax' => admin_url( 'admin-ajax.php' ), 'sending' => __( 'Sending…', 'dox-care' ), 'error' => __( 'We could not send it. Please write to us by email.', 'dox-care' ), 'tooBig' => __( 'The files add up to more than 20 MB. Send fewer, or share them with a link in the message.', 'dox-care' ) ] );
 	}
 
 	private static function arrow() {
@@ -93,7 +93,7 @@ class Dox_Care_Dashboard {
 			$user = wp_get_current_user();
 			$name = $user->first_name ?: $user->display_name;
 		}
-		$log = array_slice( Dox_Care_Requests::log(), 0, 3 );
+		$log = array_slice( Dox_Care_Requests::user_log(), 0, 3 );
 		?>
 		<div class="dxc">
 			<div class="dxc-top">
@@ -148,8 +148,12 @@ class Dox_Care_Dashboard {
 							?></small>
 						<?php endif; ?>
 					</div>
-					<?php echo Dox_Care_Requests::form(); // phpcs:ignore ?>
-					<p class="dxc-alt"><?php esc_html_e( 'You can also', 'dox-care' ); ?> <a href="<?php echo esc_url( $whmcs . '/submitticket.php?step=2&deptid=2' ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'open a ticket', 'dox-care' ); ?></a> <?php esc_html_e( 'or write to', 'dox-care' ); ?> <a href="mailto:<?php echo esc_attr( $mail ); ?>"><?php echo esc_html( $mail ); ?></a>.</p>
+					<?php if ( Dox_Care_Requests::can_request() ) : ?>
+						<?php echo Dox_Care_Requests::form(); // phpcs:ignore ?>
+						<p class="dxc-alt"><?php esc_html_e( 'You can also', 'dox-care' ); ?> <a href="<?php echo esc_url( $whmcs . '/submitticket.php?step=2&deptid=2' ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'open a ticket', 'dox-care' ); ?></a> <?php esc_html_e( 'or write to', 'dox-care' ); ?> <a href="mailto:<?php echo esc_attr( $mail ); ?>"><?php echo esc_html( $mail ); ?></a>.</p>
+					<?php else : ?>
+						<p class="dxc-alt"><?php esc_html_e( 'Changes are requested by the owner or an editor of the website. Ask them, or write to', 'dox-care' ); ?> <a href="mailto:<?php echo esc_attr( $mail ); ?>"><?php echo esc_html( $mail ); ?></a>.</p>
+					<?php endif; ?>
 					<?php if ( $log ) : ?>
 						<div class="dxc-log">
 							<p class="dxc-ey"><?php esc_html_e( 'Your latest requests', 'dox-care' ); ?></p>
