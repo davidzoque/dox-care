@@ -1,6 +1,6 @@
 <?php
 /**
- * Aviso central: un JSON público en doxstudio.com que leen todas las webs con Dox
+ * Aviso central: un JSON público en my.doxstudio.com que leen todas las webs con Dox
  * Care, para publicar un aviso a todos los clientes a la vez (mantenimiento del
  * servidor, una novedad) o cambiar los precios de los planes sin tocar cada web.
  *
@@ -15,7 +15,7 @@
  * }
  *
  * Lo pide el cron de WordPress dos veces al día y se guarda en una opción: el
- * escritorio pinta siempre lo guardado y nunca espera a doxstudio.com. Si no se puede
+ * escritorio pinta siempre lo guardado y nunca espera a my.doxstudio.com. Si no se puede
  * leer, se queda lo último que se leyó bien (o nada, y el escritorio sale sin avisos).
  */
 

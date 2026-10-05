@@ -8,7 +8,7 @@ Plugin de WordPress de Dox Studio para las webs de sus clientes de hosting y man
 - **Pedir un cambio.** Formulario (página de la web, texto de hasta 5.000 caracteres y hasta 5 archivos, 20 MB en total, comprobando que su contenido es del tipo que dice) que llega por correo a support@doxstudio.com, con Reply-To del cliente. Lo pueden usar Editor y Administrador (filtro `dox_care_request_cap` para abrirlo a otros roles), hasta 5 solicitudes al día por web, y cada usuario ve solo las suyas. También desde la barra superior de la web ("Pedir un cambio aquí"), con la página que se está viendo ya elegida.
 - **Contador de actualizaciones del mes**, según la sección F de los Términos del Servicio: cada solicitud cuenta 1; Dox Studio la ajusta y añade a mano las que llegan por correo o ticket. El cliente ve "Este mes: X de 3".
 - **Estado de la web** leído de la propia web: SSL y su renovación, actualizaciones pendientes y último cambio publicado.
-- **Aviso central**: el cron de WordPress lee `https://doxstudio.com/dox-care.json` dos veces al día y el escritorio pinta lo guardado, sin esperar nunca a doxstudio.com (avisos para todos los clientes y precios de los planes). Se puede cambiar con la constante `DOX_CARE_FEED` en wp-config.php.
+- **Aviso central**: el cron de WordPress lee `https://my.doxstudio.com/dox-care.json` dos veces al día y el escritorio pinta lo guardado, sin esperar nunca a my.doxstudio.com (avisos para todos los clientes y precios de los planes). Se puede cambiar con la constante `DOX_CARE_FEED` en wp-config.php.
 
 ## Ajustes
 
