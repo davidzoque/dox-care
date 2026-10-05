@@ -2,12 +2,20 @@
 /**
  * Entrar con un código por correo, además de con la contraseña (que sigue igual).
  *
- * El usuario escribe su correo o su usuario y le llega un código de 6 números que
- * vale 10 minutos, se usa una sola vez y admite 5 intentos. No es más débil que la
- * contraseña: quien controla el correo ya puede cambiarla con "¿Olvidaste tu
- * contraseña?". Sale en la pantalla de entrada de WordPress (también con Hide My WP,
- * que solo cambia la dirección) y en la de la caja de Dox POS, a través de sus filtros
- * dox_pos_login_code_*.
+ * El usuario escribe su correo o su usuario y le llega un código de 6 números que vale
+ * 10 minutos, se usa una sola vez y admite 5 intentos. Sale en la pantalla de entrada
+ * de WordPress (también con Hide My WP, que solo cambia la dirección) y en la de la
+ * caja de Dox POS, a través de sus filtros dox_pos_login_code_*.
+ *
+ * Lo que este camino NO es: igual de fuerte que una contraseña larga. Quien controle el
+ * correo de un usuario puede entrar a su cuenta, y a diferencia de "¿Olvidaste tu
+ * contraseña?" no cambia nada ni avisa a nadie. Por eso:
+ * - Viene apagado y se enciende por web en los ajustes.
+ * - Nunca se ofrece a cuentas con poder sobre la web (administradores, quien gestiona
+ *   usuarios o plugins) salvo que Dox Studio lo encienda también para ellas.
+ * - Se apaga solo si hay un plugin de doble factor conocido.
+ * - Todos los topes se cuentan en una tabla propia con sumas atómicas: los transients
+ *   viven en Redis en estas webs, se borran con cualquier purga y no son atómicos.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,52 +25,111 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Dox_Care_Login {
 
 	const META       = 'dox_care_login_code';
+	const TABLE      = 'dox_care_limits';
+	const DB_VERSION = '1';
 	const TTL        = 600; // 10 minutos.
 	const TRIES      = 5;   // Intentos por código.
-	const LOGIN_HOUR = 5;   // Códigos por cuenta escrita y hora.
-	const IP_HOUR    = 20;  // Códigos por IP y hora.
+	const SEND_TYPED = 5;   // Códigos por texto escrito y hora (el tope que se ve).
+	const SEND_USER  = 5;   // Códigos por cuenta y hora (el que frena de verdad; no se ve).
+	const SEND_IP    = 20;  // Códigos por IP y hora.
+	const CHECK_TYPED = 10; // Comprobaciones por texto escrito y hora.
+	const CHECK_USER = 10;  // Comprobaciones por cuenta y hora.
+	const CHECK_IP   = 30;  // Comprobaciones por IP y hora.
+
+	/** Permisos que hacen de una cuenta una llave de la web: sin código salvo opt-in. */
+	const PRIVILEGED = [ 'manage_options', 'edit_users', 'promote_users', 'create_users', 'delete_users', 'activate_plugins', 'install_plugins' ];
 
 	public static function init() {
 		if ( ! self::enabled() ) {
 			return;
 		}
+		if ( get_option( 'dox_care_db' ) !== self::DB_VERSION ) {
+			self::install();
+		}
 		add_action( 'login_form', [ __CLASS__, 'link' ] );
 		add_action( 'login_form_dox_code', [ __CLASS__, 'screen' ] );
 		add_action( 'login_enqueue_scripts', [ __CLASS__, 'styles' ] );
 
-		// Dox POS: su pantalla de caja pinta el paso a paso y nos pide enviar y comprobar.
+		// Dox POS: su pantalla de caja pinta el paso a paso y nos pide enviar y comprobar,
+		// pasando el permiso que tiene que tener la cuenta (el de usar la caja).
 		add_filter( 'dox_pos_login_code_enabled', '__return_true' );
-		add_filter( 'dox_pos_login_code_send', function ( $result, $login ) {
-			return self::send( $login );
-		}, 10, 2 );
-		add_filter( 'dox_pos_login_code_verify', function ( $result, $login, $code ) {
-			return self::verify( $login, $code );
+		add_filter( 'dox_pos_login_code_send', function ( $result, $login, $cap = '' ) {
+			return self::send( $login, (string) $cap );
 		}, 10, 3 );
+		add_filter( 'dox_pos_login_code_verify', function ( $result, $login, $code, $cap = '' ) {
+			return self::verify( $login, $code, (string) $cap );
+		}, 10, 4 );
 	}
 
 	public static function enabled() {
-		$on = Dox_Care_Settings::get( 'login_code' ) !== '0' && ! self::two_factor_plugin();
+		$on = Dox_Care_Settings::get( 'login_code' ) === '1' && ! self::two_factor_plugin();
 		return (bool) apply_filters( 'dox_care_login_code', $on );
+	}
+
+	/** La tabla de los topes: una fila por contador, con su suma y su caducidad. */
+	public static function install() {
+		global $wpdb;
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		$table = $wpdb->prefix . self::TABLE;
+		dbDelta( "CREATE TABLE {$table} (
+  k char(40) NOT NULL,
+  n int unsigned NOT NULL DEFAULT 0,
+  expires int unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY  (k),
+  KEY expires (expires)
+) {$wpdb->get_charset_collate()};" );
+		update_option( 'dox_care_db', self::DB_VERSION, false );
+	}
+
+	/**
+	 * Suma 1 a un contador y dice si sigue dentro del tope. La suma la hace MySQL en una
+	 * sola sentencia, así que cien peticiones a la vez dan 1, 2, 3... 100 y solo las
+	 * primeras pasan. Si la tabla falla, se cierra: mejor sin código que sin topes.
+	 */
+	private static function hit( $key, $limit, $window = HOUR_IN_SECONDS ) {
+		global $wpdb;
+		$table = $wpdb->prefix . self::TABLE;
+		$now   = time();
+		$k     = substr( hash( 'sha256', $key ), 0, 40 );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery
+		$ok = $wpdb->query( $wpdb->prepare(
+			"INSERT INTO {$table} (k, n, expires) VALUES (%s, 1, %d)
+			ON DUPLICATE KEY UPDATE n = IF(expires < %d, 1, n + 1), expires = IF(expires < %d, %d, expires)",
+			$k, $now + $window, $now, $now, $now + $window
+		) );
+		$n = $ok === false ? null : $wpdb->get_var( $wpdb->prepare( "SELECT n FROM {$table} WHERE k = %s", $k ) );
+		if ( wp_rand( 1, 50 ) === 1 ) {
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE expires < %d", $now ) );
+		}
+		// phpcs:enable
+		return $n !== null && (int) $n <= $limit;
 	}
 
 	/**
 	 * Si la web tiene un plugin de doble factor, el código por correo se apaga solo: sería
-	 * una puerta sin segundo factor, es decir, bajarle la seguridad a esa web sin avisar.
-	 * La lista no puede estar completa; para cualquier otro caso está el filtro
-	 * dox_care_login_code, y el ajuste lo explica.
+	 * una puerta sin segundo factor. La lista no puede estar completa (y un mu-plugin
+	 * nunca aparece aquí); por eso las cuentas con poder quedan fuera de todos modos.
 	 *
 	 * @return string El plugin encontrado, o ''.
 	 */
 	public static function two_factor_plugin() {
 		$known = [
-			'two-factor/two-factor.php'                        => 'Two Factor',
-			'wordfence/wordfence.php'                          => 'Wordfence',
-			'better-wp-security/better-wp-security.php'        => 'Solid Security',
-			'wp-2fa/wp-2fa.php'                                => 'WP 2FA',
+			'two-factor/two-factor.php'                                         => 'Two Factor',
+			'wordfence/wordfence.php'                                           => 'Wordfence',
+			'wordfence-login-security/wordfence-login-security.php'             => 'Wordfence Login Security',
+			'better-wp-security/better-wp-security.php'                         => 'Solid Security',
+			'ithemes-security-pro/ithemes-security-pro.php'                     => 'Solid Security Pro',
+			'wp-2fa/wp-2fa.php'                                                 => 'WP 2FA',
+			'wp-2fa-premium/wp-2fa.php'                                         => 'WP 2FA',
+			'two-factor-authentication/two-factor-authentication.php'           => 'Two Factor Authentication',
+			'two-factor-authentication-premium/two-factor-authentication.php'   => 'Two Factor Authentication',
 			'miniorange-2-factor-authentication/miniorange_2_factor_settings.php' => 'miniOrange 2FA',
-			'duo-wordpress/duo_wordpress.php'                  => 'Duo',
-			'google-authenticator/google-authenticator.php'    => 'Google Authenticator',
-			'wp-security-audit-log/wp-security-audit-log.php'  => 'WP Activity Log',
+			'duo-wordpress/duo_wordpress.php'                                   => 'Duo',
+			'google-authenticator/google-authenticator.php'                     => 'Google Authenticator',
+			'wp-simple-firewall/icwp-wpsf.php'                                  => 'Shield Security',
+			'all-in-one-wp-security-and-firewall/wp-security.php'               => 'All In One WP Security',
+			'rublon/rublon2factor.php'                                          => 'Rublon',
+			'keyy/keyy.php'                                                     => 'Keyy',
 		];
 		// Se lee la opción y no is_plugin_active(): esa función solo existe en el panel y
 		// esto corre también en wp-login.php.
@@ -87,32 +154,57 @@ class Dox_Care_Login {
 		return is_email( $login ) ? get_user_by( 'email', $login ) : get_user_by( 'login', $login );
 	}
 
+	/**
+	 * Lo escrito, normalizado como lo normaliza WordPress al buscar (sanitize_user quita
+	 * los acentos: "suppórt" encuentra a "support"), para que las variantes cuenten juntas.
+	 */
+	private static function typed_key( $login ) {
+		$login = trim( (string) $login );
+		return is_email( $login ) ? strtolower( remove_accents( $login ) ) : strtolower( sanitize_user( $login ) );
+	}
+
 	private static function ip() {
 		return sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) );
 	}
 
+	/** ¿Es una cuenta con poder sobre la web? */
+	private static function is_privileged( WP_User $user ) {
+		foreach ( self::PRIVILEGED as $cap ) {
+			if ( user_can( $user, $cap ) ) {
+				return true;
+			}
+		}
+		return is_multisite() && is_super_admin( $user->ID );
+	}
+
 	/**
-	 * Las comprobaciones que el login normal de WordPress hace y que este camino se
-	 * saltaría: usuarios marcados como spam o borrados en multisitio y los plugins que
-	 * bloquean cuentas por el filtro wp_authenticate_user. Más un filtro propio.
+	 * Si esta cuenta puede entrar con código: lo que comprueba el login normal (spam o
+	 * borrados en multisitio, los plugins que bloquean cuentas por wp_authenticate_user),
+	 * que no sea una cuenta con poder (salvo opt-in), el permiso que pida quien llama
+	 * (la caja pide el suyo) y un filtro propio.
 	 *
 	 * @return true|WP_Error
 	 */
-	private static function user_can_sign_in( WP_User $user ) {
-		if ( is_multisite() ) {
-			if ( ! empty( $user->spam ) || ! empty( $user->deleted ) ) {
-				return new WP_Error( 'dox_care_blocked', __( 'That account cannot sign in.', 'dox-care' ) );
-			}
-			if ( ! is_user_member_of_blog( $user->ID, get_current_blog_id() ) ) {
-				return new WP_Error( 'dox_care_blocked', __( 'That account cannot sign in.', 'dox-care' ) );
-			}
+	private static function eligible( WP_User $user, $cap = '' ) {
+		$no = new WP_Error( 'dox_care_blocked', __( 'That account cannot sign in.', 'dox-care' ) );
+		if ( ! is_email( $user->user_email ) ) {
+			return $no;
+		}
+		if ( is_multisite() && ( ! empty( $user->spam ) || ! empty( $user->deleted ) || ! is_user_member_of_blog( $user->ID, get_current_blog_id() ) ) ) {
+			return $no;
+		}
+		if ( self::is_privileged( $user ) && Dox_Care_Settings::get( 'login_code_admins' ) !== '1' ) {
+			return $no;
+		}
+		if ( $cap !== '' && ! user_can( $user, $cap ) ) {
+			return $no;
 		}
 		$checked = apply_filters( 'wp_authenticate_user', $user, '' );
 		if ( is_wp_error( $checked ) ) {
 			return $checked;
 		}
 		$allowed = apply_filters( 'dox_care_login_code_user', true, $user );
-		return is_wp_error( $allowed ) ? $allowed : ( $allowed ? true : new WP_Error( 'dox_care_blocked', __( 'That account cannot sign in.', 'dox-care' ) ) );
+		return is_wp_error( $allowed ) ? $allowed : ( $allowed ? true : $no );
 	}
 
 	private static function hash( $user_id, $code ) {
@@ -120,90 +212,113 @@ class Dox_Care_Login {
 	}
 
 	/**
-	 * Envía un código. Devuelve true también cuando el usuario no existe, para no
-	 * revelar qué correos tienen cuenta; WP_Error solo si se pasó del límite.
+	 * Envía un código. Devuelve true también cuando no se envía nada (la cuenta no existe,
+	 * no puede entrar con código o ya pidió demasiados), para no revelar cuáles hay;
+	 * WP_Error solo con los topes que se cuentan igual exista la cuenta o no.
+	 *
+	 * $cap: permiso que tiene que tener la cuenta (la caja pide el de usarla).
 	 */
-	public static function send( $login ) {
+	public static function send( $login, $cap = '' ) {
 		$limit = new WP_Error( 'dox_care_limit', __( 'Too many codes requested. Wait a few minutes or sign in with your password.', 'dox-care' ) );
-
-		$ip_key = 'dox_care_lc_' . md5( self::ip() );
-		$ip_n   = (int) get_transient( $ip_key );
-		if ( $ip_n >= self::IP_HOUR ) {
+		if ( ! self::hit( 'send-ip|' . self::ip(), self::SEND_IP ) || ! self::hit( 'send-typed|' . self::typed_key( $login ), self::SEND_TYPED ) ) {
 			return $limit;
 		}
-		set_transient( $ip_key, $ip_n + 1, HOUR_IN_SECONDS );
-
-		// El tope por cuenta se cuenta por lo que se escribió, exista o no: si solo contara
-		// las cuentas reales, llegar al tope delataría cuáles existen.
-		$key = 'dox_care_lc_u_' . md5( strtolower( trim( (string) $login ) ) );
-		$n   = (int) get_transient( $key );
-		if ( $n >= self::LOGIN_HOUR ) {
-			return $limit;
-		}
-		set_transient( $key, $n + 1, HOUR_IN_SECONDS );
 
 		$user = self::find_user( $login );
-		if ( ! $user || ! is_email( $user->user_email ) || is_wp_error( self::user_can_sign_in( $user ) ) ) {
-			return true; // Misma respuesta que si existiera: no decimos qué cuentas hay.
+		if ( ! $user || is_wp_error( self::eligible( $user, $cap ) ) ) {
+			return true;
+		}
+		// El tope de la cuenta, sea cual sea la forma de escribirla. No se ve: si se pasa, no
+		// se envía nada y el código que tuviera sigue valiendo.
+		if ( ! self::hit( 'send-user|' . $user->ID, self::SEND_USER ) ) {
+			return true;
 		}
 
 		$code = str_pad( (string) random_int( 0, 999999 ), 6, '0', STR_PAD_LEFT );
 		update_user_meta( $user->ID, self::META, [
 			'hash'    => self::hash( $user->ID, $code ),
+			'id'      => wp_generate_password( 12, false ),
 			'expires' => time() + self::TTL,
-			'tries'   => 0,
 		] );
 
-		self::email( $user, $code );
+		// El correo sale al final, con la respuesta ya entregada: si se enviara aquí, lo que
+		// tarda el SMTP delataría qué cuentas existen.
+		add_action( 'shutdown', function () use ( $user, $code ) {
+			if ( function_exists( 'fastcgi_finish_request' ) ) {
+				fastcgi_finish_request();
+			} elseif ( function_exists( 'litespeed_finish_request' ) ) {
+				litespeed_finish_request();
+			}
+			self::email( $user, $code );
+		}, PHP_INT_MAX );
 		return true;
 	}
 
-	/** Comprueba el código y, si vale, abre la sesión. Devuelve el usuario o WP_Error. */
-	public static function verify( $login, $code ) {
-		$fail = new WP_Error( 'dox_care_code', __( 'That code is not valid or has expired. Request a new one.', 'dox-care' ) );
+	/**
+	 * Comprueba el código y, si vale, abre la sesión (sin "recordarme": en una tablet de
+	 * caja compartida no conviene). Devuelve el usuario con la sesión ya abierta, o WP_Error.
+	 *
+	 * $cap: permiso que tiene que tener la cuenta, comprobado ANTES de abrir la sesión.
+	 */
+	public static function verify( $login, $code, $cap = '' ) {
+		$fail  = new WP_Error( 'dox_care_code', __( 'That code is not valid or has expired. Request a new one.', 'dox-care' ) );
+		$limit = new WP_Error( 'dox_care_limit', __( 'Too many attempts. Wait a few minutes or sign in with your password.', 'dox-care' ) );
+		if ( ! self::hit( 'check-ip|' . self::ip(), self::CHECK_IP ) || ! self::hit( 'check-typed|' . self::typed_key( $login ), self::CHECK_TYPED ) ) {
+			return $limit;
+		}
+
 		$code = preg_replace( '/\D/', '', (string) $code );
 		$user = self::find_user( $login );
 		if ( ! $user || strlen( $code ) !== 6 ) {
 			self::failed( $login, $fail );
 			return $fail;
 		}
+		if ( ! self::hit( 'check-user|' . $user->ID, self::CHECK_USER ) ) {
+			return $fail; // Sin aviso distinto: no se dice que la cuenta existe.
+		}
+
 		$saved = get_user_meta( $user->ID, self::META, true );
-		if ( ! is_array( $saved ) || empty( $saved['hash'] ) || (int) $saved['expires'] < time() || (int) $saved['tries'] >= self::TRIES ) {
+		if ( ! is_array( $saved ) || empty( $saved['hash'] ) || empty( $saved['id'] ) || (int) $saved['expires'] < time() ) {
+			self::failed( $login, $fail );
+			return $fail;
+		}
+		// El intento se cuenta antes de comparar y en la base de datos: con peticiones en
+		// paralelo, solo las 5 primeras llegan a comparar.
+		if ( ! self::hit( 'try|' . $user->ID . '|' . $saved['id'], self::TRIES, self::TTL ) ) {
 			delete_user_meta( $user->ID, self::META );
 			self::failed( $login, $fail );
 			return $fail;
 		}
 		if ( ! hash_equals( $saved['hash'], self::hash( $user->ID, $code ) ) ) {
-			$saved['tries'] = (int) $saved['tries'] + 1;
-			update_user_meta( $user->ID, self::META, $saved );
 			self::failed( $login, $fail );
 			return $fail;
 		}
 
-		delete_user_meta( $user->ID, self::META ); // Un solo uso, acertado o no.
+		delete_user_meta( $user->ID, self::META ); // Un solo uso.
 
-		// Se vuelve a comprobar aquí y no solo al enviar: la cuenta pudo bloquearse entre medias.
-		$can = self::user_can_sign_in( $user );
+		// Se vuelve a comprobar aquí y no solo al enviar: la cuenta pudo cambiar entre medias.
+		$can = self::eligible( $user, $cap );
 		if ( is_wp_error( $can ) ) {
-			self::failed( $login, $can );
-			return $can;
+			self::failed( $login, $fail );
+			return $fail;
 		}
 
 		wp_set_current_user( $user->ID );
-		wp_set_auth_cookie( $user->ID, true, is_ssl() );
+		wp_set_auth_cookie( $user->ID, false, is_ssl() );
 		do_action( 'wp_login', $user->user_login, $user );
 		return $user;
 	}
 
 	/**
 	 * Un intento fallido, igual que lo anuncia el login normal, para que los plugins que
-	 * cuentan fallos y bloquean por IP (Wordfence, Limit Login Attempts) también vean estos.
+	 * cuentan fallos (Wordfence, Limit Login Attempts) también vean estos. Lo frenan los
+	 * topes de comprobación: no se puede usar para generar fallos sin límite a nombre de otro.
 	 */
 	private static function failed( $login, WP_Error $error ) {
 		do_action( 'wp_login_failed', (string) $login, $error );
 	}
 
-	/** El correo con el código, en el idioma de ese usuario. */
+	/** El correo con el código, en el idioma de ese usuario. El código no va en el asunto. */
 	private static function email( WP_User $user, $code ) {
 		$lang = Dox_Care_Settings::get( 'language' );
 		if ( ! in_array( $lang, [ 'es', 'en' ], true ) ) {
@@ -212,8 +327,8 @@ class Dox_Care_Login {
 		$restore = Dox_Care_Settings::use_language( $lang );
 
 		$site = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ) ?: wp_parse_url( home_url(), PHP_URL_HOST );
-		/* translators: 1: the code, 2: site name */
-		$subject = sprintf( __( '%1$s is your code to sign in to %2$s', 'dox-care' ), $code, $site );
+		/* translators: %s: site name */
+		$subject = sprintf( __( 'Your code to sign in to %s', 'dox-care' ), $site );
 		$body  = '<div style="font-family:Arial,sans-serif;font-size:15px;color:#141313;max-width:480px">';
 		/* translators: %s: site name */
 		$body .= '<p>' . esc_html( sprintf( __( 'Your code to sign in to %s:', 'dox-care' ), $site ) ) . '</p>';
@@ -225,19 +340,23 @@ class Dox_Care_Login {
 		$restore();
 	}
 
-	/** Adónde ir al entrar, con el filtro de WordPress (Dox POS lleva a los cajeros a la caja). */
-	private static function redirect_to( WP_User $user ) {
-		$requested = isset( $_REQUEST['redirect_to'] ) && is_scalar( $_REQUEST['redirect_to'] ) ? wp_unslash( $_REQUEST['redirect_to'] ) : '';
-		$to        = $requested ?: admin_url();
-		return apply_filters( 'login_redirect', $to, $requested, $user );
+	private static function requested_redirect() {
+		return isset( $_REQUEST['redirect_to'] ) && is_scalar( $_REQUEST['redirect_to'] ) ? wp_unslash( $_REQUEST['redirect_to'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	}
 
-	private static function url( $args = [] ) {
-		$redirect = isset( $_REQUEST['redirect_to'] ) && is_scalar( $_REQUEST['redirect_to'] ) ? wp_unslash( $_REQUEST['redirect_to'] ) : '';
+	/** Adónde ir al entrar, con el filtro de WordPress (Dox POS lleva a los cajeros a la caja). */
+	private static function redirect_to( WP_User $user ) {
+		$requested = self::requested_redirect();
+		return apply_filters( 'login_redirect', $requested ?: admin_url(), $requested, $user );
+	}
+
+	private static function url() {
+		$args     = [ 'action' => 'dox_code' ];
+		$redirect = self::requested_redirect();
 		if ( $redirect ) {
-			$args['redirect_to'] = rawurlencode( $redirect );
+			$args['redirect_to'] = rawurlencode( $redirect ); // add_query_arg no codifica los valores.
 		}
-		return add_query_arg( array_merge( [ 'action' => 'dox_code' ], $args ), wp_login_url() );
+		return add_query_arg( $args, wp_login_url() );
 	}
 
 	/**
@@ -260,15 +379,18 @@ class Dox_Care_Login {
 		$step   = 'ask';
 		$login  = isset( $_POST['log'] ) && is_scalar( $_POST['log'] ) ? sanitize_text_field( wp_unslash( $_POST['log'] ) ) : '';
 		$posted = $_SERVER['REQUEST_METHOD'] === 'POST' && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) ), 'dox_care_code' );
+		// El paso va en un campo oculto y no en el nombre del botón: con Enter, algunos
+		// navegadores no mandan el botón.
+		$want = $posted && isset( $_POST['dxc_step'] ) && is_scalar( $_POST['dxc_step'] ) ? sanitize_key( $_POST['dxc_step'] ) : '';
 
-		if ( $posted && ! isset( $_POST['dxc_verify'] ) ) {
+		if ( $want === 'send' ) {
 			$sent = self::send( $login );
 			if ( is_wp_error( $sent ) ) {
 				$errors->add( 'limit', $sent->get_error_message() );
 			} else {
 				$step = 'code';
 			}
-		} elseif ( $posted ) {
+		} elseif ( $want === 'verify' ) {
 			$code = isset( $_POST['code'] ) && is_scalar( $_POST['code'] ) ? wp_unslash( $_POST['code'] ) : '';
 			$user = self::verify( $login, $code );
 			if ( $user instanceof WP_User ) {
@@ -280,7 +402,7 @@ class Dox_Care_Login {
 		}
 
 		$message = $step === 'code'
-			? '<p class="message">' . esc_html__( 'If that account exists, we sent a 6-digit code to its email. It may take a minute; check spam too.', 'dox-care' ) . '</p>'
+			? '<p class="message">' . esc_html__( 'If that account can sign in with a code, we sent one to its email. It may take a minute; check spam too.', 'dox-care' ) . '</p>'
 			: '<p class="message">' . esc_html__( 'Write your email or username and we will send you a code to sign in, no password needed.', 'dox-care' ) . '</p>';
 
 		login_header( __( 'Sign in with a code', 'dox-care' ), $message, $errors );
@@ -288,25 +410,27 @@ class Dox_Care_Login {
 		<form name="dxc-code-form" id="loginform" action="<?php echo esc_url( self::url() ); ?>" method="post">
 			<?php wp_nonce_field( 'dox_care_code' ); ?>
 			<?php if ( $step === 'ask' ) : ?>
+				<input type="hidden" name="dxc_step" value="send">
 				<p>
 					<label for="user_login"><?php esc_html_e( 'Username or email', 'dox-care' ); ?></label>
 					<input type="text" name="log" id="user_login" class="input" value="<?php echo esc_attr( $login ); ?>" autocomplete="username" required autofocus>
 				</p>
-				<p class="submit"><input type="submit" name="dxc_send" class="button button-primary button-large" value="<?php esc_attr_e( 'Send me a code', 'dox-care' ); ?>"></p>
+				<p class="submit"><input type="submit" class="button button-primary button-large" value="<?php esc_attr_e( 'Send me a code', 'dox-care' ); ?>"></p>
 			<?php else : ?>
+				<input type="hidden" name="dxc_step" value="verify">
 				<input type="hidden" name="log" value="<?php echo esc_attr( $login ); ?>">
 				<p>
 					<label for="dxc-code"><?php esc_html_e( 'Code', 'dox-care' ); ?></label>
 					<input type="text" name="code" id="dxc-code" class="input" inputmode="numeric" pattern="[0-9 ]*" maxlength="7" autocomplete="one-time-code" required autofocus>
 				</p>
-				<p class="submit"><input type="submit" name="dxc_verify" class="button button-primary button-large" value="<?php esc_attr_e( 'Sign in', 'dox-care' ); ?>"></p>
+				<p class="submit"><input type="submit" class="button button-primary button-large" value="<?php esc_attr_e( 'Sign in', 'dox-care' ); ?>"></p>
 			<?php endif; ?>
 		</form>
 		<p id="nav">
 			<?php if ( $step === 'code' ) : ?>
 				<a href="<?php echo esc_url( self::url() ); ?>"><?php esc_html_e( 'Request another code', 'dox-care' ); ?></a> |
 			<?php endif; ?>
-			<a href="<?php echo esc_url( wp_login_url( isset( $_REQUEST['redirect_to'] ) && is_scalar( $_REQUEST['redirect_to'] ) ? wp_unslash( $_REQUEST['redirect_to'] ) : '' ) ); ?>"><?php esc_html_e( 'Sign in with your password', 'dox-care' ); ?></a>
+			<a href="<?php echo esc_url( wp_login_url( self::requested_redirect() ) ); ?>"><?php esc_html_e( 'Sign in with your password', 'dox-care' ); ?></a>
 		</p>
 		<?php
 		login_footer( 'user_login' );
