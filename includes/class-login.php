@@ -29,15 +29,27 @@ class Dox_Care_Login {
 	const DB_VERSION = '1';
 	const TTL        = 600; // 10 minutos.
 	const TRIES      = 5;   // Intentos por código.
-	const SEND_TYPED = 5;   // Códigos por texto escrito y hora (el tope que se ve).
-	const SEND_USER  = 5;   // Códigos por cuenta y hora (el que frena de verdad; no se ve).
-	const SEND_IP    = 20;  // Códigos por IP y hora.
-	const CHECK_TYPED = 10; // Comprobaciones por texto escrito y hora.
-	const CHECK_USER = 10;  // Comprobaciones por cuenta y hora.
-	const CHECK_IP   = 30;  // Comprobaciones por IP y hora.
+	// Topes por hora. Los de IP son los únicos que se ven; los de cuenta y el de toda la
+	// web no, para que una cuenta real y una inventada respondan igual.
+	const SEND_IP    = 20;  // Códigos pedidos por IP.
+	const SEND_USER  = 5;   // Códigos enviados a una cuenta, la escriba como la escriba.
+	const CHECK_IP   = 30;  // Comprobaciones por IP.
+	const CHECK_USER = 10;  // Comprobaciones contra el código vivo de una cuenta.
 
-	/** Permisos que hacen de una cuenta una llave de la web: sin código salvo opt-in. */
-	const PRIVILEGED = [ 'manage_options', 'edit_users', 'promote_users', 'create_users', 'delete_users', 'activate_plugins', 'install_plugins' ];
+	const SEND_ALL   = 100; // Códigos enviados por web y hora, a todas las cuentas juntas.
+
+	/**
+	 * Permisos que hacen de una cuenta una llave de la web: sin código salvo opt-in.
+	 * unfiltered_html va aquí porque quien lo tiene (el Editor, en una web normal) puede
+	 * dejar un script en una entrada que, al abrirla un administrador, cree otro
+	 * administrador. manage_woocommerce, porque cambia adónde llega el dinero.
+	 */
+	const PRIVILEGED = [
+		'manage_options', 'edit_users', 'promote_users', 'create_users', 'delete_users',
+		'activate_plugins', 'install_plugins', 'update_plugins', 'edit_plugins',
+		'switch_themes', 'edit_themes', 'edit_theme_options', 'update_core', 'import',
+		'unfiltered_html', 'manage_woocommerce',
+	];
 
 	public static function init() {
 		if ( ! self::enabled() ) {
@@ -78,7 +90,25 @@ class Dox_Care_Login {
   PRIMARY KEY  (k),
   KEY expires (expires)
 ) {$wpdb->get_charset_collate()};" );
-		update_option( 'dox_care_db', self::DB_VERSION, false );
+		// Solo se da por instalada si la tabla existe de verdad; si no, se reintenta en la
+		// próxima carga y mientras tanto el código no está disponible.
+		if ( self::table_exists() ) {
+			update_option( 'dox_care_db', self::DB_VERSION, false );
+		}
+	}
+
+	private static function table_exists() {
+		global $wpdb;
+		$table = $wpdb->prefix . self::TABLE;
+		return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) === $table; // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	}
+
+	private static function ready() {
+		return get_option( 'dox_care_db' ) === self::DB_VERSION;
+	}
+
+	private static function unavailable() {
+		return new WP_Error( 'dox_care_unavailable', __( 'Signing in with a code is not available right now. Use your password.', 'dox-care' ) );
 	}
 
 	/**
@@ -91,18 +121,33 @@ class Dox_Care_Login {
 		$table = $wpdb->prefix . self::TABLE;
 		$now   = time();
 		$k     = substr( hash( 'sha256', $key ), 0, 40 );
+		// LAST_INSERT_ID(expr) deja en la conexión el valor que esta misma sentencia
+		// escribió, así que no hace falta volver a leer la tabla (otra petición podría
+		// haberla cambiado entre medias). 1 fila afectada = fila nueva, n = 1;
+		// 2 = actualizada, n = insert_id. El orden importa: n se calcula con el expires viejo.
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery
-		$ok = $wpdb->query( $wpdb->prepare(
+		$quiet = $wpdb->suppress_errors( true ); // Un fallo de SQL no se pinta en la pantalla de entrada.
+		$rows  = $wpdb->query( $wpdb->prepare(
 			"INSERT INTO {$table} (k, n, expires) VALUES (%s, 1, %d)
-			ON DUPLICATE KEY UPDATE n = IF(expires < %d, 1, n + 1), expires = IF(expires < %d, %d, expires)",
+			ON DUPLICATE KEY UPDATE n = LAST_INSERT_ID(IF(expires < %d, 1, n + 1)), expires = IF(expires < %d, %d, expires)",
 			$k, $now + $window, $now, $now, $now + $window
 		) );
-		$n = $ok === false ? null : $wpdb->get_var( $wpdb->prepare( "SELECT n FROM {$table} WHERE k = %s", $k ) );
-		if ( wp_rand( 1, 50 ) === 1 ) {
+		if ( $rows !== false && wp_rand( 1, 50 ) === 1 ) {
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE expires < %d", $now ) );
 		}
+		$wpdb->suppress_errors( $quiet );
 		// phpcs:enable
-		return $n !== null && (int) $n <= $limit;
+		if ( $rows === 1 ) {
+			$n = 1;
+		} elseif ( $rows === 2 ) {
+			$n = (int) $wpdb->insert_id;
+		} else {
+			// La consulta falló (¿la tabla ya no está?): se cierra, y en la próxima carga se
+			// vuelve a instalar.
+			delete_option( 'dox_care_db' );
+			return false;
+		}
+		return $n >= 1 && $n <= $limit;
 	}
 
 	/**
@@ -137,8 +182,12 @@ class Dox_Care_Login {
 		if ( is_multisite() ) {
 			$active = array_merge( $active, array_keys( (array) get_site_option( 'active_sitewide_plugins', [] ) ) );
 		}
+		// Por carpeta y no por archivo exacto: algunos cambian el nombre del archivo principal.
+		$folders = array_map( function ( $f ) {
+			return strtok( (string) $f, '/' );
+		}, $active );
 		foreach ( $known as $file => $name ) {
-			if ( in_array( $file, $active, true ) ) {
+			if ( in_array( strtok( $file, '/' ), $folders, true ) ) {
 				return $name;
 			}
 		}
@@ -155,16 +204,18 @@ class Dox_Care_Login {
 	}
 
 	/**
-	 * Lo escrito, normalizado como lo normaliza WordPress al buscar (sanitize_user quita
-	 * los acentos: "suppórt" encuentra a "support"), para que las variantes cuenten juntas.
+	 * La IP para los topes. En us1, mod_remoteip ya pone en REMOTE_ADDR la IP real que
+	 * manda Cloudflare. Una IPv6 se agrupa por su /64: quien tiene una tiene 2^64.
 	 */
-	private static function typed_key( $login ) {
-		$login = trim( (string) $login );
-		return is_email( $login ) ? strtolower( remove_accents( $login ) ) : strtolower( sanitize_user( $login ) );
-	}
-
 	private static function ip() {
-		return sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) );
+		$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) );
+		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+			$bin = inet_pton( $ip );
+			if ( $bin !== false ) {
+				return bin2hex( substr( $bin, 0, 8 ) ) . '::/64';
+			}
+		}
+		return $ip;
 	}
 
 	/** ¿Es una cuenta con poder sobre la web? */
@@ -214,13 +265,18 @@ class Dox_Care_Login {
 	/**
 	 * Envía un código. Devuelve true también cuando no se envía nada (la cuenta no existe,
 	 * no puede entrar con código o ya pidió demasiados), para no revelar cuáles hay;
-	 * WP_Error solo con los topes que se cuentan igual exista la cuenta o no.
+	 * WP_Error solo con el tope por IP, que se cuenta igual exista la cuenta o no. Los
+	 * topes por cuenta van por su id, así que escribirla con acentos ("suppórt" encuentra
+	 * a "support") o con su correo no da más intentos.
 	 *
 	 * $cap: permiso que tiene que tener la cuenta (la caja pide el de usarla).
 	 */
 	public static function send( $login, $cap = '' ) {
+		if ( ! self::ready() ) {
+			return self::unavailable();
+		}
 		$limit = new WP_Error( 'dox_care_limit', __( 'Too many codes requested. Wait a few minutes or sign in with your password.', 'dox-care' ) );
-		if ( ! self::hit( 'send-ip|' . self::ip(), self::SEND_IP ) || ! self::hit( 'send-typed|' . self::typed_key( $login ), self::SEND_TYPED ) ) {
+		if ( ! self::hit( 'send-ip|' . self::ip(), self::SEND_IP ) ) {
 			return $limit;
 		}
 
@@ -231,6 +287,11 @@ class Dox_Care_Login {
 		// El tope de la cuenta, sea cual sea la forma de escribirla. No se ve: si se pasa, no
 		// se envía nada y el código que tuviera sigue valiendo.
 		if ( ! self::hit( 'send-user|' . $user->ID, self::SEND_USER ) ) {
+			return true;
+		}
+		// Tope de toda la web, para que nadie use la tienda para mandar correo a miles de
+		// clientas cambiando de IP. Solo cuenta envíos reales; tampoco se ve.
+		if ( ! self::hit( 'send-all', self::SEND_ALL ) ) {
 			return true;
 		}
 
@@ -261,9 +322,12 @@ class Dox_Care_Login {
 	 * $cap: permiso que tiene que tener la cuenta, comprobado ANTES de abrir la sesión.
 	 */
 	public static function verify( $login, $code, $cap = '' ) {
+		if ( ! self::ready() ) {
+			return self::unavailable();
+		}
 		$fail  = new WP_Error( 'dox_care_code', __( 'That code is not valid or has expired. Request a new one.', 'dox-care' ) );
 		$limit = new WP_Error( 'dox_care_limit', __( 'Too many attempts. Wait a few minutes or sign in with your password.', 'dox-care' ) );
-		if ( ! self::hit( 'check-ip|' . self::ip(), self::CHECK_IP ) || ! self::hit( 'check-typed|' . self::typed_key( $login ), self::CHECK_TYPED ) ) {
+		if ( ! self::hit( 'check-ip|' . self::ip(), self::CHECK_IP ) ) {
 			return $limit;
 		}
 
@@ -273,14 +337,15 @@ class Dox_Care_Login {
 			self::failed( $login, $fail );
 			return $fail;
 		}
-		if ( ! self::hit( 'check-user|' . $user->ID, self::CHECK_USER ) ) {
-			return $fail; // Sin aviso distinto: no se dice que la cuenta existe.
-		}
-
 		$saved = get_user_meta( $user->ID, self::META, true );
 		if ( ! is_array( $saved ) || empty( $saved['hash'] ) || empty( $saved['id'] ) || (int) $saved['expires'] < time() ) {
 			self::failed( $login, $fail );
 			return $fail;
+		}
+		// El tope de la cuenta solo cuenta cuando hay un código que adivinar: si no, bastaría
+		// mandar basura para dejar a un cajero sin poder usar el suyo.
+		if ( ! self::hit( 'check-user|' . $user->ID, self::CHECK_USER ) ) {
+			return $fail; // Sin aviso distinto: no se dice que la cuenta existe.
 		}
 		// El intento se cuenta antes de comparar y en la base de datos: con peticiones en
 		// paralelo, solo las 5 primeras llegan a comparar.

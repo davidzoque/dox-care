@@ -289,8 +289,8 @@ class Dox_Care_Settings {
 						<td>
 							<label><input type="checkbox" name="login_code" value="1" <?php checked( $s['login_code'], '1' ); ?>> <?php esc_html_e( 'Let users sign in with a code sent to their email, as well as with their password.', 'dox-care' ); ?></label>
 							<p class="description"><?php esc_html_e( 'Also on the Dox POS register screen. Only turn it on if this website’s emails arrive reliably.', 'dox-care' ); ?></p>
-							<label style="display:block;margin-top:10px"><input type="checkbox" name="login_code_admins" value="1" <?php checked( $s['login_code_admins'], '1' ); ?>> <?php esc_html_e( 'Also for administrators and accounts that manage users or plugins', 'dox-care' ); ?></label>
-							<p class="description"><?php esc_html_e( 'Not recommended: whoever gets into the email of one of these accounts takes control of the website. Off, they always sign in with their password.', 'dox-care' ); ?></p>
+							<label style="display:block;margin-top:10px"><input type="checkbox" name="login_code_admins" value="1" <?php checked( $s['login_code_admins'], '1' ); ?>> <?php esc_html_e( 'Also for accounts with power over the website (administrators, editors, store managers)', 'dox-care' ); ?></label>
+							<p class="description"><?php esc_html_e( 'Not recommended: whoever gets into the email of one of these accounts can take control of the website (an editor can leave code that runs when an administrator opens it). Off, they always sign in with their password.', 'dox-care' ); ?></p>
 							<?php $tfa = Dox_Care_Login::two_factor_plugin(); ?>
 							<?php if ( $tfa ) : ?>
 								<p class="description" style="color:#B42318"><strong><?php

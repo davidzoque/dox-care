@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-05 17:07-0400\n"
+"POT-Creation-Date: 2026-10-05 17:17-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -244,52 +244,56 @@ msgstr "Ver planes"
 msgid "Classic WordPress dashboard"
 msgstr "Escritorio clásico de WordPress"
 
-#: includes/class-login.php:189
+#: includes/class-login.php:111
+msgid "Signing in with a code is not available right now. Use your password."
+msgstr "Ahora mismo no se puede entrar con código. Usa tu contraseña."
+
+#: includes/class-login.php:235
 msgid "That account cannot sign in."
 msgstr "Esa cuenta no puede entrar."
 
-#: includes/class-login.php:222
+#: includes/class-login.php:273
 msgid ""
 "Too many codes requested. Wait a few minutes or sign in with your password."
 msgstr ""
 "Has pedido demasiados códigos. Espera unos minutos o entra con tu contraseña."
 
-#: includes/class-login.php:264
+#: includes/class-login.php:323
 msgid "That code is not valid or has expired. Request a new one."
 msgstr "Ese código no es válido o ya caducó. Pide uno nuevo."
 
-#: includes/class-login.php:265
+#: includes/class-login.php:324
 msgid "Too many attempts. Wait a few minutes or sign in with your password."
 msgstr "Demasiados intentos. Espera unos minutos o entra con tu contraseña."
 
 #. translators: %s: site name
-#: includes/class-login.php:331
+#: includes/class-login.php:391
 #, php-format
 msgid "Your code to sign in to %s"
 msgstr "Tu código para entrar a %s"
 
 #. translators: %s: site name
-#: includes/class-login.php:334
+#: includes/class-login.php:394
 #, php-format
 msgid "Your code to sign in to %s:"
 msgstr "Tu código para entrar a %s:"
 
-#: includes/class-login.php:336
+#: includes/class-login.php:396
 msgid "It is valid for 10 minutes and can be used once."
 msgstr "Vale 10 minutos y se puede usar una sola vez."
 
-#: includes/class-login.php:337
+#: includes/class-login.php:397
 msgid ""
 "If you did not request it, ignore this email: nobody can sign in without the "
 "code."
 msgstr ""
 "Si no lo pediste, ignora este correo: nadie puede entrar sin el código."
 
-#: includes/class-login.php:368
+#: includes/class-login.php:428
 msgid "Sign in with a code by email"
 msgstr "Entrar con un código por correo"
 
-#: includes/class-login.php:405
+#: includes/class-login.php:465
 msgid ""
 "If that account can sign in with a code, we sent one to its email. It may "
 "take a minute; check spam too."
@@ -297,7 +301,7 @@ msgstr ""
 "Si esa cuenta puede entrar con código, le enviamos uno a su correo. Puede "
 "tardar un minuto; revisa también el spam."
 
-#: includes/class-login.php:406
+#: includes/class-login.php:466
 msgid ""
 "Write your email or username and we will send you a code to sign in, no "
 "password needed."
@@ -305,31 +309,31 @@ msgstr ""
 "Escribe tu correo o tu usuario y te enviamos un código para entrar, sin "
 "contraseña."
 
-#: includes/class-login.php:408 includes/class-settings.php:288
+#: includes/class-login.php:468 includes/class-settings.php:288
 msgid "Sign in with a code"
 msgstr "Entrar con un código"
 
-#: includes/class-login.php:415
+#: includes/class-login.php:475
 msgid "Username or email"
 msgstr "Usuario o correo"
 
-#: includes/class-login.php:418
+#: includes/class-login.php:478
 msgid "Send me a code"
 msgstr "Envíame un código"
 
-#: includes/class-login.php:423
+#: includes/class-login.php:483
 msgid "Code"
 msgstr "Código"
 
-#: includes/class-login.php:426
+#: includes/class-login.php:486
 msgid "Sign in"
 msgstr "Entrar"
 
-#: includes/class-login.php:431
+#: includes/class-login.php:491
 msgid "Request another code"
 msgstr "Pedir otro código"
 
-#: includes/class-login.php:433
+#: includes/class-login.php:493
 msgid "Sign in with your password"
 msgstr "Entrar con tu contraseña"
 
@@ -677,17 +681,17 @@ msgstr ""
 "de esta web llegan bien."
 
 #: includes/class-settings.php:292
-msgid "Also for administrators and accounts that manage users or plugins"
-msgstr ""
-"También para administradores y cuentas que gestionan usuarios o plugins"
+msgid ""
+"Also for accounts with power over the website (administrators, editors, "
+"store managers)"
+msgstr "También para cuentas con poder sobre la web (administradores, editores, gerentes de tienda)"
 
 #: includes/class-settings.php:293
 msgid ""
-"Not recommended: whoever gets into the email of one of these accounts takes "
-"control of the website. Off, they always sign in with their password."
-msgstr ""
-"No recomendado: quien entre al correo de una de esas cuentas se queda con la "
-"web. Apagado, siempre entran con su contraseña."
+"Not recommended: whoever gets into the email of one of these accounts can "
+"take control of the website (an editor can leave code that runs when an "
+"administrator opens it). Off, they always sign in with their password."
+msgstr "No recomendado: quien entre al correo de una de esas cuentas puede quedarse con la web (un editor puede dejar código que se ejecuta cuando un administrador lo abre). Apagado, siempre entran con su contraseña."
 
 #. translators: %s: name of the two-factor plugin found
 #: includes/class-settings.php:298
