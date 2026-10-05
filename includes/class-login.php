@@ -16,12 +16,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Dox_Care_Login {
 
-	const META      = 'dox_care_login_code';
-	const SENDS     = 'dox_care_login_sends';
-	const TTL       = 600; // 10 minutos.
-	const TRIES     = 5;   // Intentos por código.
-	const USER_HOUR = 5;   // Códigos por usuario y hora.
-	const IP_HOUR   = 20;  // Códigos por IP y hora.
+	const META       = 'dox_care_login_code';
+	const TTL        = 600; // 10 minutos.
+	const TRIES      = 5;   // Intentos por código.
+	const LOGIN_HOUR = 5;   // Códigos por cuenta escrita y hora.
+	const IP_HOUR    = 20;  // Códigos por IP y hora.
 
 	public static function init() {
 		if ( ! self::enabled() ) {
@@ -42,7 +41,41 @@ class Dox_Care_Login {
 	}
 
 	public static function enabled() {
-		return (bool) apply_filters( 'dox_care_login_code', Dox_Care_Settings::get( 'login_code' ) !== '0' );
+		$on = Dox_Care_Settings::get( 'login_code' ) !== '0' && ! self::two_factor_plugin();
+		return (bool) apply_filters( 'dox_care_login_code', $on );
+	}
+
+	/**
+	 * Si la web tiene un plugin de doble factor, el código por correo se apaga solo: sería
+	 * una puerta sin segundo factor, es decir, bajarle la seguridad a esa web sin avisar.
+	 * La lista no puede estar completa; para cualquier otro caso está el filtro
+	 * dox_care_login_code, y el ajuste lo explica.
+	 *
+	 * @return string El plugin encontrado, o ''.
+	 */
+	public static function two_factor_plugin() {
+		$known = [
+			'two-factor/two-factor.php'                        => 'Two Factor',
+			'wordfence/wordfence.php'                          => 'Wordfence',
+			'better-wp-security/better-wp-security.php'        => 'Solid Security',
+			'wp-2fa/wp-2fa.php'                                => 'WP 2FA',
+			'miniorange-2-factor-authentication/miniorange_2_factor_settings.php' => 'miniOrange 2FA',
+			'duo-wordpress/duo_wordpress.php'                  => 'Duo',
+			'google-authenticator/google-authenticator.php'    => 'Google Authenticator',
+			'wp-security-audit-log/wp-security-audit-log.php'  => 'WP Activity Log',
+		];
+		// Se lee la opción y no is_plugin_active(): esa función solo existe en el panel y
+		// esto corre también en wp-login.php.
+		$active = (array) get_option( 'active_plugins', [] );
+		if ( is_multisite() ) {
+			$active = array_merge( $active, array_keys( (array) get_site_option( 'active_sitewide_plugins', [] ) ) );
+		}
+		foreach ( $known as $file => $name ) {
+			if ( in_array( $file, $active, true ) ) {
+				return $name;
+			}
+		}
+		return '';
 	}
 
 	/** El usuario a partir de lo que escribió: correo o nombre de usuario. */
@@ -58,6 +91,30 @@ class Dox_Care_Login {
 		return sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) );
 	}
 
+	/**
+	 * Las comprobaciones que el login normal de WordPress hace y que este camino se
+	 * saltaría: usuarios marcados como spam o borrados en multisitio y los plugins que
+	 * bloquean cuentas por el filtro wp_authenticate_user. Más un filtro propio.
+	 *
+	 * @return true|WP_Error
+	 */
+	private static function user_can_sign_in( WP_User $user ) {
+		if ( is_multisite() ) {
+			if ( ! empty( $user->spam ) || ! empty( $user->deleted ) ) {
+				return new WP_Error( 'dox_care_blocked', __( 'That account cannot sign in.', 'dox-care' ) );
+			}
+			if ( ! is_user_member_of_blog( $user->ID, get_current_blog_id() ) ) {
+				return new WP_Error( 'dox_care_blocked', __( 'That account cannot sign in.', 'dox-care' ) );
+			}
+		}
+		$checked = apply_filters( 'wp_authenticate_user', $user, '' );
+		if ( is_wp_error( $checked ) ) {
+			return $checked;
+		}
+		$allowed = apply_filters( 'dox_care_login_code_user', true, $user );
+		return is_wp_error( $allowed ) ? $allowed : ( $allowed ? true : new WP_Error( 'dox_care_blocked', __( 'That account cannot sign in.', 'dox-care' ) ) );
+	}
+
 	private static function hash( $user_id, $code ) {
 		return hash_hmac( 'sha256', $user_id . '|' . $code, wp_salt( 'auth' ) );
 	}
@@ -67,26 +124,28 @@ class Dox_Care_Login {
 	 * revelar qué correos tienen cuenta; WP_Error solo si se pasó del límite.
 	 */
 	public static function send( $login ) {
+		$limit = new WP_Error( 'dox_care_limit', __( 'Too many codes requested. Wait a few minutes or sign in with your password.', 'dox-care' ) );
+
 		$ip_key = 'dox_care_lc_' . md5( self::ip() );
 		$ip_n   = (int) get_transient( $ip_key );
 		if ( $ip_n >= self::IP_HOUR ) {
-			return new WP_Error( 'dox_care_limit', __( 'Too many codes requested. Wait a few minutes or sign in with your password.', 'dox-care' ) );
+			return $limit;
 		}
 		set_transient( $ip_key, $ip_n + 1, HOUR_IN_SECONDS );
 
-		$user = self::find_user( $login );
-		if ( ! $user || ! is_email( $user->user_email ) ) {
-			return true;
+		// El tope por cuenta se cuenta por lo que se escribió, exista o no: si solo contara
+		// las cuentas reales, llegar al tope delataría cuáles existen.
+		$key = 'dox_care_lc_u_' . md5( strtolower( trim( (string) $login ) ) );
+		$n   = (int) get_transient( $key );
+		if ( $n >= self::LOGIN_HOUR ) {
+			return $limit;
 		}
+		set_transient( $key, $n + 1, HOUR_IN_SECONDS );
 
-		$sends = array_filter( (array) get_user_meta( $user->ID, self::SENDS, true ), function ( $t ) {
-			return (int) $t > time() - HOUR_IN_SECONDS;
-		} );
-		if ( count( $sends ) >= self::USER_HOUR ) {
-			return new WP_Error( 'dox_care_limit', __( 'Too many codes requested. Wait a few minutes or sign in with your password.', 'dox-care' ) );
+		$user = self::find_user( $login );
+		if ( ! $user || ! is_email( $user->user_email ) || is_wp_error( self::user_can_sign_in( $user ) ) ) {
+			return true; // Misma respuesta que si existiera: no decimos qué cuentas hay.
 		}
-		$sends[] = time();
-		update_user_meta( $user->ID, self::SENDS, array_values( $sends ) );
 
 		$code = str_pad( (string) random_int( 0, 999999 ), 6, '0', STR_PAD_LEFT );
 		update_user_meta( $user->ID, self::META, [
@@ -105,24 +164,43 @@ class Dox_Care_Login {
 		$code = preg_replace( '/\D/', '', (string) $code );
 		$user = self::find_user( $login );
 		if ( ! $user || strlen( $code ) !== 6 ) {
+			self::failed( $login, $fail );
 			return $fail;
 		}
 		$saved = get_user_meta( $user->ID, self::META, true );
 		if ( ! is_array( $saved ) || empty( $saved['hash'] ) || (int) $saved['expires'] < time() || (int) $saved['tries'] >= self::TRIES ) {
 			delete_user_meta( $user->ID, self::META );
+			self::failed( $login, $fail );
 			return $fail;
 		}
 		if ( ! hash_equals( $saved['hash'], self::hash( $user->ID, $code ) ) ) {
 			$saved['tries'] = (int) $saved['tries'] + 1;
 			update_user_meta( $user->ID, self::META, $saved );
+			self::failed( $login, $fail );
 			return $fail;
 		}
 
-		delete_user_meta( $user->ID, self::META ); // Un solo uso.
+		delete_user_meta( $user->ID, self::META ); // Un solo uso, acertado o no.
+
+		// Se vuelve a comprobar aquí y no solo al enviar: la cuenta pudo bloquearse entre medias.
+		$can = self::user_can_sign_in( $user );
+		if ( is_wp_error( $can ) ) {
+			self::failed( $login, $can );
+			return $can;
+		}
+
 		wp_set_current_user( $user->ID );
 		wp_set_auth_cookie( $user->ID, true, is_ssl() );
 		do_action( 'wp_login', $user->user_login, $user );
 		return $user;
+	}
+
+	/**
+	 * Un intento fallido, igual que lo anuncia el login normal, para que los plugins que
+	 * cuentan fallos y bloquean por IP (Wordfence, Limit Login Attempts) también vean estos.
+	 */
+	private static function failed( $login, WP_Error $error ) {
+		do_action( 'wp_login_failed', (string) $login, $error );
 	}
 
 	/** El correo con el código, en el idioma de ese usuario. */

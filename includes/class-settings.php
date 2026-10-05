@@ -287,6 +287,13 @@ class Dox_Care_Settings {
 						<td>
 							<label><input type="checkbox" name="login_code" value="1" <?php checked( $s['login_code'], '1' ); ?>> <?php esc_html_e( 'Let users sign in with a code sent to their email, as well as with their password.', 'dox-care' ); ?></label>
 							<p class="description"><?php esc_html_e( 'Also on the Dox POS register screen. Turn it off if this website’s emails do not arrive reliably.', 'dox-care' ); ?></p>
+							<?php $tfa = Dox_Care_Login::two_factor_plugin(); ?>
+							<?php if ( $tfa ) : ?>
+								<p class="description" style="color:#B42318"><strong><?php
+									/* translators: %s: name of the two-factor plugin found */
+									printf( esc_html__( 'Turned off on this website: %s is active and a code by email would be a way in without the second factor.', 'dox-care' ), esc_html( $tfa ) );
+								?></strong></p>
+							<?php endif; ?>
 						</td>
 					</tr>
 				</table>
