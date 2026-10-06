@@ -18,8 +18,8 @@ class Dox_Care_Settings {
 			'language'      => 'auto',
 			'support_email' => 'support@doxstudio.com',
 			'client_name'   => '',
-			'login_code'        => '0',
-			'login_code_admins' => '0',
+			'login_code'        => '1',
+			'login_code_admins' => '1',
 		];
 	}
 
@@ -67,8 +67,8 @@ class Dox_Care_Settings {
 	}
 
 	/** Fecha corta en el idioma del panel (la web puede estar en otro idioma). */
-	public static function date( $timestamp ) {
-		if ( self::language() !== 'es' ) {
+	public static function date( $timestamp, $lang = '' ) {
+		if ( ( $lang ?: self::language() ) !== 'es' ) {
 			return date_i18n( 'F j, Y', $timestamp );
 		}
 		$months = [ 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre' ];
@@ -288,9 +288,9 @@ class Dox_Care_Settings {
 						<th scope="row"><?php esc_html_e( 'Sign in with a code', 'dox-care' ); ?></th>
 						<td>
 							<label><input type="checkbox" name="login_code" value="1" <?php checked( $s['login_code'], '1' ); ?>> <?php esc_html_e( 'Let users sign in with a code sent to their email, as well as with their password.', 'dox-care' ); ?></label>
-							<p class="description"><?php esc_html_e( 'Also on the Dox POS register screen. Only turn it on if this website’s emails arrive reliably.', 'dox-care' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Also on the Dox POS register screen. Turn it off if this website’s emails do not arrive reliably.', 'dox-care' ); ?></p>
 							<label style="display:block;margin-top:10px"><input type="checkbox" name="login_code_admins" value="1" <?php checked( $s['login_code_admins'], '1' ); ?>> <?php esc_html_e( 'Also for accounts with power over the website (administrators, editors, store managers)', 'dox-care' ); ?></label>
-							<p class="description"><?php esc_html_e( 'Not recommended: whoever gets into the email of one of these accounts can take control of the website (an editor can leave code that runs when an administrator opens it). Off, they always sign in with their password.', 'dox-care' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Whoever gets into the email of one of these accounts could take control of the website; each sign-in with a code sends the account an email warning, so it does not go unnoticed. Off, they always sign in with their password.', 'dox-care' ); ?></p>
 							<?php $tfa = Dox_Care_Login::two_factor_plugin(); ?>
 							<?php if ( $tfa ) : ?>
 								<p class="description" style="color:#B42318"><strong><?php

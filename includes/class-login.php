@@ -8,11 +8,12 @@
  * caja de Dox POS, a través de sus filtros dox_pos_login_code_*.
  *
  * Lo que este camino NO es: igual de fuerte que una contraseña larga. Quien controle el
- * correo de un usuario puede entrar a su cuenta, y a diferencia de "¿Olvidaste tu
- * contraseña?" no cambia nada ni avisa a nadie. Por eso:
- * - Viene apagado y se enciende por web en los ajustes.
- * - Nunca se ofrece a cuentas con poder sobre la web (administradores, quien gestiona
- *   usuarios o plugins) salvo que Dox Studio lo encienda también para ellas.
+ * correo de un usuario puede entrar a su cuenta. Por eso:
+ * - Cada entrada con código le manda al usuario un aviso ("has entrado a tal web con un
+ *   código"), como hacen Google o Netflix, para que una entrada que no hizo no pase
+ *   desapercibida.
+ * - Se apaga por web en los ajustes, y aparte se puede dejar fuera a las cuentas con
+ *   poder sobre la web (administradores, editores, quien gestiona usuarios o plugins).
  * - Se apaga solo si hay un plugin de doble factor conocido.
  * - Todos los topes se cuentan en una tabla propia con sumas atómicas: los transients
  *   viven en Redis en estas webs, se borran con cualquier purga y no son atómicos.
@@ -372,6 +373,12 @@ class Dox_Care_Login {
 		wp_set_current_user( $user->ID );
 		wp_set_auth_cookie( $user->ID, false, is_ssl() );
 		do_action( 'wp_login', $user->user_login, $user );
+
+		// El aviso de la entrada sale al final, como el código, para no hacer esperar.
+		$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) );
+		add_action( 'shutdown', function () use ( $user, $ip ) {
+			self::signed_in_email( $user, $ip );
+		}, PHP_INT_MAX );
 		return $user;
 	}
 
@@ -405,6 +412,32 @@ class Dox_Care_Login {
 		$body .= '<p style="font-size:32px;font-weight:bold;letter-spacing:6px;margin:18px 0">' . esc_html( $code ) . '</p>';
 		$body .= '<p>' . esc_html__( 'It is valid for 10 minutes and can be used once.', 'dox-care' ) . '</p>';
 		$body .= '<p style="color:#6B6866;font-size:13px">' . esc_html__( 'If you did not request it, ignore this email: nobody can sign in without the code.', 'dox-care' ) . '</p></div>';
+
+		wp_mail( $user->user_email, $subject, $body, [ 'Content-Type: text/html; charset=UTF-8' ] );
+		$restore();
+	}
+
+	/** El aviso al usuario de que alguien entró a su cuenta con un código. */
+	private static function signed_in_email( WP_User $user, $ip ) {
+		$lang = Dox_Care_Settings::get( 'language' );
+		if ( ! in_array( $lang, [ 'es', 'en' ], true ) ) {
+			$lang = strpos( get_user_locale( $user ), 'es' ) === 0 ? 'es' : 'en';
+		}
+		$restore = Dox_Care_Settings::use_language( $lang );
+
+		$site = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ) ?: wp_parse_url( home_url(), PHP_URL_HOST );
+		$when = Dox_Care_Settings::date( time(), $lang ) . ', ' . wp_date( $lang === 'es' ? 'H:i' : 'g:i a' );
+		/* translators: %s: site name */
+		$subject = sprintf( __( 'You signed in to %s with a code', 'dox-care' ), $site );
+		$body  = '<div style="font-family:Arial,sans-serif;font-size:15px;color:#141313;max-width:480px">';
+		/* translators: %s: site name */
+		$body .= '<p>' . esc_html( sprintf( __( 'Someone just signed in to your account on %s with a code sent to this email.', 'dox-care' ), $site ) ) . '</p>';
+		$body .= '<p style="background:#F4F3F1;border-radius:8px;padding:12px 14px;margin:16px 0">';
+		$body .= '<b>' . esc_html__( 'When:', 'dox-care' ) . '</b> ' . esc_html( $when ) . '<br>';
+		$body .= '<b>' . esc_html__( 'From the IP address:', 'dox-care' ) . '</b> ' . esc_html( $ip ) . '</p>';
+		$body .= '<p>' . esc_html__( 'If it was you, there is nothing to do.', 'dox-care' ) . '</p>';
+		$body .= '<p>' . esc_html__( 'If it was not you, change the password of this email right away (someone may have access to it) and then the password of the website:', 'dox-care' ) . ' ';
+		$body .= '<a href="' . esc_url( wp_lostpassword_url() ) . '">' . esc_html__( 'change my password', 'dox-care' ) . '</a>.</p></div>';
 
 		wp_mail( $user->user_email, $subject, $body, [ 'Content-Type: text/html; charset=UTF-8' ] );
 		$restore();
