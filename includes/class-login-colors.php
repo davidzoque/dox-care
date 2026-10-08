@@ -15,7 +15,8 @@
  * toca, y si el fondo es una imagen que se ve no se puede medir y tampoco se toca.
  *
  * Nuestro enlace va aparte: lleva el color del botón siempre que se lea, para que
- * combine con la marca, y si no, el del texto del formulario (ver Dox_Care_Login).
+ * combine con la marca; si no, el del texto del formulario (ver Dox_Care_Login), y
+ * si tampoco ese se lee, blanco o casi negro.
  * Va en todas las pantallas del login, esté o no encendido el código por correo.
  */
 
@@ -42,6 +43,8 @@ class Dox_Care_Login_Colors {
 			. 'function rgba(c){x.clearRect(0,0,1,1);x.fillStyle="#000";x.fillStyle=c;x.fillRect(0,0,1,1);return x.getImageData(0,0,1,1).data;}'
 			. 'function lum(d){var r=[0,1,2].map(function(i){var v=d[i]/255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4);});return .2126*r[0]+.7152*r[1]+.0722*r[2];}'
 			. 'function ratio(a,b){a=lum(a);b=lum(b);return(Math.max(a,b)+.05)/(Math.min(a,b)+.05);}'
+			// Un color semitransparente se ve mezclado con su fondo: se mide ya mezclado.
+			. 'function over(c,g){var k=c[3]/255;return[0,1,2].map(function(i){return c[i]*k+g[i]*(1-k);});}'
 			// El fondo es el del primer contenedor que no sea transparente, con las imágenes que
 			// haya por el camino; null si hay un degradado o varias capas, que no se pueden medir.
 			. 'function bg(e){var u=[];while(e&&e.nodeType===1){var s=getComputedStyle(e),i=s.backgroundImage;if(i!=="none"){var m=i.match(/^url\\("?(.*?)"?\\)$/);if(!m){return null;}u.push(m[1]);}var d=rgba(s.backgroundColor);if(d[3]>127){return{c:d,u:u};}e=e.parentNode;}return{c:[255,255,255,255],u:u};}'
@@ -51,13 +54,14 @@ class Dox_Care_Login_Colors {
 			. 'function when(e,cb){var g=bg(e);if(g){seen(g.u,function(img){if(!img){cb(g.c);}});}}'
 			. 'var b=document.querySelector("#wp-submit,#loginform .button-primary"),bc=b?getComputedStyle(b).backgroundColor:"",bd=bc?rgba(bc):null;if(bd&&bd[3]<230){bd=null;}'
 			. 'function pick(g){if(bd&&ratio(bd,g)>=4.5){return bc;}return ratio([255,255,255],g)>=ratio([29,35,39],g)?"#fff":"#1d2327";}'
-			// Nuestro enlace: el color del botón si se lee; si no, se queda el del CSS.
-			. 'var l=document.querySelector("#dxc-code-link a");if(l&&bd){when(l.parentNode,function(g){if(ratio(bd,g)>=4.5){l.style.setProperty("--dxc-link",bc);}});}'
+			// Nuestro enlace: el color del botón si se lee; si no, el del CSS (el texto del
+			// formulario), y si tampoco se lee (un tema con el texto gris claro), blanco o negro.
+			. 'var l=document.querySelector("#dxc-code-link a");if(l){when(l.parentNode,function(g){if(bd&&ratio(bd,g)>=4.5){l.style.setProperty("--dxc-link",bc);}else if(ratio(over(rgba(getComputedStyle(l).color),g),g)<4.5){l.style.setProperty("--dxc-link",pick(g));}});}'
 			. 'document.querySelectorAll(' . wp_json_encode( self::TARGETS ) . ').forEach(function(e){'
 			. 'if(!e.getClientRects().length){return;}var s=getComputedStyle(e),t=rgba(s.color);'
 			// Un botón con fondo propio ya trae su contraste; solo se arregla si es transparente.
 			. 'var o=e.classList.contains("button")?rgba(s.backgroundColor):null;if(o&&o[3]>127){return;}'
-			. 'when(o?e.parentNode:e,function(g){if(ratio(t,g)>=4.5){return;}'
+			. 'when(o?e.parentNode:e,function(g){if(ratio(over(t,g),g)>=4.5){return;}'
 			. 'var c=pick(g);e.style.setProperty("color",c,"important");if(o){e.style.setProperty("border-color",c,"important");}});'
 			. '});'
 			. '}'
