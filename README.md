@@ -18,6 +18,8 @@ Plugin de WordPress de Dox Studio para las webs de sus clientes de hosting y man
   - **Se apaga solo con un plugin de doble factor** conocido (Two Factor, Wordfence, Solid Security, WP 2FA, Shield, miniOrange, Duo...) y los ajustes lo dicen; el filtro `dox_care_login_code` cubre cualquier otro caso.
   - Riesgo que no desaparece: quien controle el correo de una cuenta puede entrar a ella, y a diferencia de restablecer la contraseña no deja rastro ni avisa. Solo encenderlo en webs cuyos correos lleguen bien.
 
+- **Enlaces del login que se leen** sobre cualquier fondo (`class-login-colors.php`, en todas las pantallas de entrada aunque el código esté apagado). Un JS mide "Privacy Policy", "Lost your password?", el selector de idioma y el enlace del código contra su fondo, y solo toca los que no llegan a 4,5 a 1: les pone el color del botón de entrar si se lee, y si no, blanco o casi negro. Nuestro enlace lleva el color del botón siempre que se lea. Los fondos con una imagen que carga no se tocan. Se apaga con el filtro `dox_care_login_colors`.
+
 ## Ajustes
 
 En **Dox Plugins > Dox Care**: plan, nombre del cliente, idioma (automático, español o inglés) y correo de soporte, más la tabla del contador. Solo los cambia el equipo de Dox Studio (usuario `support` o correo @doxstudio.com / @paradoxstudio.co); el cliente solo ve su plan y su contador. Se puede ampliar con el filtro `dox_care_is_staff`.

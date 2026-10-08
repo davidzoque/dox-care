@@ -4,7 +4,7 @@
  * Plugin URI:  https://doxstudio.com/es/mantenimiento-web/
  * Update URI:  https://github.com/davidzoque/dox-care
  * Description: Your website care plan with Dox Studio: a dashboard with your plan, your site status and a one-click way to request changes.
- * Version:     0.3.3
+ * Version:     0.3.4
  * Author:      Dox Studio
  * Author URI:  https://doxstudio.com
  * License:     GPL-2.0+
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'DOX_CARE_VERSION', '0.3.3' );
+define( 'DOX_CARE_VERSION', '0.3.4' );
 define( 'DOX_CARE_FILE', __FILE__ );
 define( 'DOX_CARE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'DOX_CARE_URL', plugin_dir_url( __FILE__ ) );
@@ -71,6 +71,7 @@ require_once DOX_CARE_DIR . 'includes/class-requests.php';
 require_once DOX_CARE_DIR . 'includes/class-dashboard.php';
 require_once DOX_CARE_DIR . 'includes/class-admin-bar.php';
 require_once DOX_CARE_DIR . 'includes/class-login.php';
+require_once DOX_CARE_DIR . 'includes/class-login-colors.php';
 
 // Idioma: el del usuario, o el que se fije en los ajustes. Se carga nuestro .mo
 // para cualquier variante de español (es_ES, es_CO, es_MX...).
@@ -88,6 +89,7 @@ add_action( 'plugins_loaded', function () {
 	Dox_Care_Requests::init();
 	Dox_Care_Admin_Bar::init();
 	Dox_Care_Login::init();
+	Dox_Care_Login_Colors::init();
 } );
 
 // Entrada en el menú "Dox Plugins".

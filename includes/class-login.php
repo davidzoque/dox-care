@@ -465,36 +465,19 @@ class Dox_Care_Login {
 	/**
 	 * El enlace bajo el formulario de contraseña. WordPress no tiene un gancho después
 	 * del botón de entrar, así que se pinta aquí y una línea de JS lo baja debajo; sin
-	 * JS se queda donde está y funciona igual.
-	 *
-	 * El mismo JS le pone el color del botón de entrar, que es el color de la marca en
-	 * cualquier login personalizado (y el azul de WordPress en el de siempre), pero
-	 * solo si se lee bien sobre el fondo de la tarjeta: contraste de 4,5 a 1 como
-	 * mínimo. Si no, o sin JS, se queda con el color del texto (ver styles()).
+	 * JS se queda donde está y funciona igual. Su color lo pone Dox_Care_Login_Colors.
 	 */
 	public static function link() {
 		echo '<p class="dxc-code-link" id="dxc-code-link"><a href="' . esc_url( self::url() ) . '">' . esc_html__( 'Sign in with a code by email', 'dox-care' ) . '</a></p>';
-		echo '<script>document.addEventListener("DOMContentLoaded",function(){'
-			. 'var l=document.getElementById("dxc-code-link");if(!l){return;}'
-			. 'var f=l.parentNode,s=f.querySelector(".submit");if(s){f.insertBefore(l,s.nextSibling);}'
-			// Cualquier formato de color (rgb, oklab, color()...) a números de 0 a 255, vía canvas.
-			. 'var x=document.createElement("canvas").getContext("2d");if(!x){return;}'
-			. 'function rgba(c){x.clearRect(0,0,1,1);x.fillStyle="#000";x.fillStyle=c;x.fillRect(0,0,1,1);return x.getImageData(0,0,1,1).data;}'
-			. 'function lum(d){var r=[0,1,2].map(function(i){var v=d[i]/255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4);});return .2126*r[0]+.7152*r[1]+.0722*r[2];}'
-			. 'var b=f.querySelector("#wp-submit,.button-primary");if(!b){return;}'
-			. 'var c=getComputedStyle(b).backgroundColor,k=rgba(c);if(k[3]<230){return;}'
-			// El fondo es el del primer contenedor que no sea transparente; si no hay ninguno, blanco.
-			. 'var e=l,g=null;while(e&&e.nodeType===1){var d=rgba(getComputedStyle(e).backgroundColor);if(d[3]>127){g=d;break;}e=e.parentNode;}'
-			. 'var a=lum(k),z=g?lum(g):1;if((Math.max(a,z)+.05)/(Math.min(a,z)+.05)>=4.5){l.firstChild.style.setProperty("--dxc-link",c);}'
-			. '});</script>';
+		echo '<script>document.addEventListener("DOMContentLoaded",function(){var l=document.getElementById("dxc-code-link"),s=l&&l.parentNode.querySelector(".submit");if(s){s.parentNode.insertBefore(l,s.nextSibling);}});</script>';
 	}
 
 	/**
-	 * Sin el color del botón (ver link()), el enlace y la línea toman el color del texto
-	 * del formulario (currentColor), así que se leen igual en el login blanco de
-	 * WordPress que en uno oscuro (UiCore, Hide My WP...). Va subrayado, como los
-	 * enlaces de debajo. Los navegadores sin color-mix() se quedan con el color heredado
-	 * y la línea gris. Selectores flojos a propósito: el CSS del tema o de la web gana.
+	 * Sin el color del botón (ver Dox_Care_Login_Colors), el enlace y la línea toman el
+	 * color del texto del formulario (currentColor), así que se leen igual en el login
+	 * blanco de WordPress que en uno oscuro (UiCore, Hide My WP...). Va subrayado, como
+	 * los enlaces de debajo. Los navegadores sin color-mix() se quedan con el color
+	 * heredado y la línea gris. Selectores flojos a propósito: el CSS del tema gana.
 	 */
 	public static function styles() {
 		echo '<style>.dxc-code-link{clear:both;margin:0;padding:14px 0 2px;text-align:center}#loginform .submit+.dxc-code-link{border-top:1px solid #dcdcde;border-top-color:color-mix(in srgb,currentColor 20%,transparent);margin-top:52px}.dxc-code-link a{color:inherit;color:var(--dxc-link,color-mix(in srgb,currentColor 85%,transparent));text-decoration:underline;text-underline-offset:2px}.dxc-code-link a:hover,.dxc-code-link a:focus{color:var(--dxc-link,inherit);text-decoration-thickness:2px}#dxc-code{font-size:24px;letter-spacing:6px;text-align:center}</style>';
