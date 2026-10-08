@@ -36,7 +36,7 @@ class Dox_Care_Login_Colors {
 	}
 
 	public static function script() {
-		echo '<script>(function(){'
+		echo '<script>(function(){function run(){'
 			// Cualquier formato de color (rgb, oklab, color()...) a números de 0 a 255, vía canvas.
 			. 'var x=document.createElement("canvas").getContext("2d");if(!x){return;}'
 			. 'function rgba(c){x.clearRect(0,0,1,1);x.fillStyle="#000";x.fillStyle=c;x.fillRect(0,0,1,1);return x.getImageData(0,0,1,1).data;}'
@@ -60,6 +60,10 @@ class Dox_Care_Login_Colors {
 			. 'when(o?e.parentNode:e,function(g){if(ratio(t,g)>=4.5){return;}'
 			. 'var c=pick(g);e.style.setProperty("color",c,"important");if(o){e.style.setProperty("border-color",c,"important");}});'
 			. '});'
+			. '}'
+			// Se mide con la página ya cargada: White Label CMS y otros imprimen sus estilos del
+			// login más abajo que este script, y antes el fondo aún es el gris de WordPress.
+			. 'if(document.readyState==="complete"){run();}else{window.addEventListener("load",run);}'
 			. '})();</script>';
 	}
 }
