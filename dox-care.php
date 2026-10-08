@@ -4,7 +4,7 @@
  * Plugin URI:  https://doxstudio.com/es/mantenimiento-web/
  * Update URI:  https://github.com/davidzoque/dox-care
  * Description: Your website care plan with Dox Studio: a dashboard with your plan, your site status and a one-click way to request changes.
- * Version:     0.3.2
+ * Version:     0.3.3
  * Author:      Dox Studio
  * Author URI:  https://doxstudio.com
  * License:     GPL-2.0+
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'DOX_CARE_VERSION', '0.3.2' );
+define( 'DOX_CARE_VERSION', '0.3.3' );
 define( 'DOX_CARE_FILE', __FILE__ );
 define( 'DOX_CARE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'DOX_CARE_URL', plugin_dir_url( __FILE__ ) );
