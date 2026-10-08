@@ -472,8 +472,15 @@ class Dox_Care_Login {
 		echo '<script>document.addEventListener("DOMContentLoaded",function(){var l=document.getElementById("dxc-code-link"),s=l&&l.parentNode.querySelector(".submit");if(s){s.parentNode.insertBefore(l,s.nextSibling);}});</script>';
 	}
 
+	/**
+	 * El enlace y la línea toman el color del texto del formulario (currentColor), así
+	 * que se leen igual en el login blanco de WordPress que en uno oscuro (UiCore, Hide
+	 * My WP...). Va subrayado, como los enlaces de debajo, porque ya no se distingue por
+	 * el color. Los navegadores sin color-mix() se quedan con el color heredado y la
+	 * línea gris. Selectores flojos a propósito: el CSS del tema o de la web gana.
+	 */
 	public static function styles() {
-		echo '<style>.dxc-code-link{clear:both;margin:0;padding:14px 0 2px;text-align:center}#loginform .submit+.dxc-code-link{border-top:1px solid #dcdcde;margin-top:52px}.dxc-code-link a{text-decoration:none}#dxc-code{font-size:24px;letter-spacing:6px;text-align:center}</style>';
+		echo '<style>.dxc-code-link{clear:both;margin:0;padding:14px 0 2px;text-align:center}#loginform .submit+.dxc-code-link{border-top:1px solid #dcdcde;border-top-color:color-mix(in srgb,currentColor 20%,transparent);margin-top:52px}.dxc-code-link a{color:inherit;color:color-mix(in srgb,currentColor 85%,transparent);text-decoration:underline;text-underline-offset:2px}.dxc-code-link a:hover,.dxc-code-link a:focus{color:inherit}#dxc-code{font-size:24px;letter-spacing:6px;text-align:center}</style>';
 	}
 
 	/** wp-login.php?action=dox_code: paso 1 (correo) y paso 2 (código). */
