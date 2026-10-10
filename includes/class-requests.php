@@ -211,7 +211,7 @@ class Dox_Care_Requests {
 			$headers[] = 'Reply-To: ' . $user->display_name . ' <' . $user->user_email . '>';
 		}
 
-		$sent = wp_mail( Dox_Care_Settings::get( 'support_email' ), $subject, $body, $headers, $attachments );
+		$sent = Dox_Care_Mailer::send( Dox_Care_Settings::get( 'support_email' ), $subject, $body, $headers, $attachments );
 
 		if ( ! $sent ) {
 			wp_send_json_error( [ 'message' => __( 'We could not send it. Please write to us by email.', 'dox-care' ) ], 500 );

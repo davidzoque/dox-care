@@ -29,7 +29,7 @@ En **Dox Plugins > Dox Care**: plan, nombre del cliente, idioma (automático, es
 ## Estructura
 
 - `dox-care.php`: arranque, idioma, actualizador y registro en el menú "Dox Plugins".
-- `includes/`: ajustes, planes, aviso central, estado, contador, solicitudes, escritorio y barra superior.
+- `includes/`: ajustes, planes, aviso central, estado, contador, solicitudes, escritorio y barra superior. Los correos en HTML salen por `class-mailer.php`, que les añade la versión en texto plano.
 - `assets/`: CSS y JS del escritorio y de la ventana.
 - `languages/`: textos en inglés en el código y traducción al español (`dox-care-es_ES.po/.mo`).
 - `dox-core/`: copia del menú común de los plugins de Dox Studio (se edita en `Plugins/dox-core/` y se sincroniza con `sync-dox-core.sh`).

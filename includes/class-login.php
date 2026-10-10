@@ -413,7 +413,7 @@ class Dox_Care_Login {
 		$body .= '<p>' . esc_html__( 'It is valid for 10 minutes and can be used once.', 'dox-care' ) . '</p>';
 		$body .= '<p style="color:#6B6866;font-size:13px">' . esc_html__( 'If you did not request it, ignore this email: nobody can sign in without the code.', 'dox-care' ) . '</p></div>';
 
-		wp_mail( $user->user_email, $subject, $body, [ 'Content-Type: text/html; charset=UTF-8' ] );
+		Dox_Care_Mailer::send( $user->user_email, $subject, $body, [ 'Content-Type: text/html; charset=UTF-8' ] );
 		$restore();
 	}
 
@@ -439,7 +439,7 @@ class Dox_Care_Login {
 		$body .= '<p>' . esc_html__( 'If it was not you, change the password of this email right away (someone may have access to it) and then the password of the website:', 'dox-care' ) . ' ';
 		$body .= '<a href="' . esc_url( wp_lostpassword_url() ) . '">' . esc_html__( 'change my password', 'dox-care' ) . '</a>.</p></div>';
 
-		wp_mail( $user->user_email, $subject, $body, [ 'Content-Type: text/html; charset=UTF-8' ] );
+		Dox_Care_Mailer::send( $user->user_email, $subject, $body, [ 'Content-Type: text/html; charset=UTF-8' ] );
 		$restore();
 	}
 
