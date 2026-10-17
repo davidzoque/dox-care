@@ -44,9 +44,14 @@ class Dox_Care_Dashboard {
 		}
 	}
 
-	/** /wp-admin/ y "Escritorio" llevan al de Dox Care, salvo que se pida el clásico. */
+	/**
+	 * /wp-admin/ y "Escritorio" llevan al de Dox Care, salvo que se pida el clásico.
+	 * Solo el escritorio sin nada en la dirección: load-index.php corre antes que
+	 * admin_action_*, y otros plugins usan index.php?action=... (el sign in de Site Kit)
+	 * o index.php?oauth2callback=1 para sus vueltas de Google.
+	 */
 	public static function redirect() {
-		if ( isset( $_GET['page'] ) || isset( $_GET['dox_classic'] ) || ! current_user_can( self::CAP ) ) {
+		if ( ! empty( $_GET ) || ! empty( $_POST ) || ! current_user_can( self::CAP ) ) {
 			return;
 		}
 		wp_safe_redirect( self::url() );
