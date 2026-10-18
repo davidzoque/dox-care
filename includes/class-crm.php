@@ -48,6 +48,13 @@ class Dox_Care_Crm {
 		// Recién actualizado: pedir el alta en un minuto, sin esperar a la pasada de turno.
 		if ( get_option( self::VERSION ) !== DOX_CARE_VERSION ) {
 			update_option( self::VERSION, DOX_CARE_VERSION, false );
+			// Una versión nueva puede traer lo que hacía falta para conectarse: que vuelva
+			// a pedir el alta ya, sin esperar las 6 horas.
+			$s = self::state();
+			if ( $s['state'] !== 'connected' ) {
+				$s['registered_at'] = 0;
+				self::save( $s );
+			}
 			if ( ! wp_next_scheduled( self::HOOK . '_once' ) ) {
 				wp_schedule_single_event( time() + MINUTE_IN_SECONDS, self::HOOK . '_once' );
 			}
@@ -206,7 +213,7 @@ class Dox_Care_Crm {
 			}
 			// El alta se repite como mucho cada 6 horas (y siempre la primera vez).
 			if ( in_array( $s['state'], [ 'none', 'pending', 'rejected' ], true ) && $s['registered_at'] < time() - 6 * HOUR_IN_SECONDS ) {
-				$r = self::post( 'register', [ 'claim_hash' => hash( 'sha256', $s['claim'] ), 'plugin_version' => DOX_CARE_VERSION ], [], false );
+				$r = self::post( 'register', [ 'claim_hash' => hash( 'sha256', $s['claim'] ), 'plugin_version' => DOX_CARE_VERSION, 'account' => self::account() ], [], false );
 				$s['registered_at'] = time();
 				if ( $r['code'] === 200 && ! empty( $r['body']['state'] ) ) {
 					$s['state']      = sanitize_key( $r['body']['state'] );
@@ -335,6 +342,22 @@ class Dox_Care_Crm {
 		self::sync();
 		wp_safe_redirect( add_query_arg( 'synced', '1', wp_get_referer() ) . '#dxc-crm' );
 		exit;
+	}
+
+	/**
+	 * La cuenta de hosting en la que vive la web (el usuario de cPanel de /home/<cuenta>/).
+	 * Con ella el CRM sabe que una web como oqizen.com, dentro del hosting de
+	 * victoriachaux.com, comparte su plan y su cupo. Solo sirve para pedir el alta: el
+	 * CRM igual comprueba el dominio antes de aprobarla.
+	 */
+	public static function account() {
+		return preg_match( '#^/home\d*/([a-z0-9_]+)/#i', (string) ABSPATH, $m ) ? strtolower( $m[1] ) : '';
+	}
+
+	/** Cuántas webs comparten el cupo (las del mismo hosting), según el CRM. */
+	public static function group_sites() {
+		$st = self::status();
+		return $st ? max( 1, (int) ( $st['sites'] ?? 1 ) ) : 1;
 	}
 
 	/** El plan según el CRM, si está conectada y es uno de los tres. */

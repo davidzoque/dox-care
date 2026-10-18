@@ -957,3 +957,9 @@ msgstr "Esperando a que Dox Studio apruebe esta web."
 #: includes/class-crm.php
 msgid "We need something from you"
 msgstr "Te necesito"
+
+#. translators: %d: number of websites in the same hosting plan
+#: includes/class-usage.php
+#, php-format
+msgid "(shared by your %d websites)"
+msgstr "(compartidas entre tus %d webs)"

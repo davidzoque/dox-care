@@ -12,6 +12,7 @@ Plugin de WordPress de Dox Studio para las webs de sus clientes de hosting y man
   - **El estado** se pide por el cron dos veces al día (`dox_care_crm_sync`), un minuto después de actualizar el plugin y justo después de enviar; el escritorio pinta lo guardado (`dox_care_crm_status`) y nunca espera al CRM.
   - **Si el CRM no contesta**, la solicitud sale por correo como antes con el asunto "[Sin CRM]" y queda en `dox_care_crm_outbox`; el cron la reintenta y su clave evita duplicarla.
   - **Al conectarse** manda una vez lo que el contador viejo tiene de este mes (`import`), que entra en el CRM como "importado" para cuadrar el mes.
+  - **Varias webs en un mismo hosting (0.4.1)**: al pedir el alta manda su cuenta de cPanel (`/home/<cuenta>/`); el CRM cuelga la web del hosting de esa cuenta y comparten plan y cupo. El escritorio dice "(compartidas entre tus N webs)".
   - **Si el CRM la desconecta** (o el secreto deja de valer), la web borra su secreto y vuelve a pedir el alta sola.
   - En los ajustes (equipo de Dox), "Conexión con Dox Studio" dice en qué punto está, con "Sincronizar ahora"; conectada, el plan no se elige aquí y la tabla del contador desaparece.
 - **Contador de actualizaciones del mes** (hasta la 0.3.8, y en 0.4.0 mientras la web no está conectada al CRM), según la sección F de los Términos del Servicio: cada solicitud cuenta 1; Dox Studio la ajusta y añade a mano las que llegan por correo o ticket. El cliente ve "Este mes: X de 3".

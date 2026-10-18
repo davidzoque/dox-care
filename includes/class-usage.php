@@ -128,6 +128,12 @@ class Dox_Care_Usage {
 			return sprintf( _n( 'This month: %d request (your plan has unlimited updates)', 'This month: %d requests (your plan has unlimited updates)', $used, 'dox-care' ), $used );
 		}
 		/* translators: 1: updates used, 2: updates included per month */
-		return sprintf( __( 'This month: %1$d of %2$d updates used', 'dox-care' ), $used, $limit );
+		$text  = sprintf( __( 'This month: %1$d of %2$d updates used', 'dox-care' ), $used, $limit );
+		$sites = Dox_Care_Crm::group_sites();
+		if ( $sites > 1 ) {
+			/* translators: %d: number of websites in the same hosting plan */
+			$text .= ' ' . sprintf( __( '(shared by your %d websites)', 'dox-care' ), $sites );
+		}
+		return $text;
 	}
 }
