@@ -13,3 +13,9 @@ global $wpdb;
 $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}dox_care_limits" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 delete_option( 'dox_care_db' );
 delete_metadata( 'user', 0, 'dox_care_login_code', '', true );
+// La conexión con el CRM (0.4.0): el secreto no se queda en una web sin el plugin.
+delete_option( 'dox_care_crm' );
+delete_option( 'dox_care_crm_status' );
+delete_option( 'dox_care_crm_outbox' );
+delete_option( 'dox_care_crm_version' );
+wp_clear_scheduled_hook( 'dox_care_crm_sync' );

@@ -736,8 +736,7 @@ msgid ""
 "in without the second factor."
 msgstr ""
 "Apagado en esta web: %s está activo y un código por correo sería una entrada "
-"sin el segundo factor.Apagado en esta web: %s está activo y un código por "
-"correo sería una entrada sin el segundo factor."
+"sin el segundo factor."
 
 #: includes/class-settings.php:304 includes/class-settings.php:368
 msgid "Save changes"
@@ -874,3 +873,87 @@ msgstr[1] "Este mes: %d solicitudes (tu plan tiene actualizaciones ilimitadas)"
 #, php-format
 msgid "This month: %1$d of %2$d updates used"
 msgstr "Este mes: %1$d de %2$d actualizaciones usadas"
+
+#: includes/class-crm.php
+msgid "Approved. It picks up its key on its next sync."
+msgstr "Aprobada. Recoge su llave en su siguiente sincronización."
+
+#: includes/class-crm.php
+msgid "Closed"
+msgstr "Cerrada"
+
+#: includes/class-crm.php
+msgid "Connected with Dox Studio. The plan and the updates of the month come from its CRM."
+msgstr "Conectada con Dox Studio. El plan y las actualizaciones del mes vienen de su CRM."
+
+#: includes/class-crm.php
+msgid "Connection with Dox Studio"
+msgstr "Conexión con Dox Studio"
+
+#: includes/class-crm.php
+msgid "Done"
+msgstr "Hecha"
+
+#: includes/class-crm.php
+msgid "Dox Studio rejected the connection of this website."
+msgstr "Dox Studio rechazó la conexión de esta web."
+
+#: includes/class-crm.php
+msgid "In progress"
+msgstr "En curso"
+
+#: includes/class-crm.php
+msgid "In queue"
+msgstr "En cola"
+
+#: includes/class-crm.php
+msgid "In queue, ready by %s"
+msgstr "En cola, lista antes del %s"
+
+#: includes/class-crm.php
+msgid "Last error: %s."
+msgstr "Último error: %s."
+
+#: includes/class-crm.php
+msgid "Last sync: %s."
+msgstr "Última sincronización: %s."
+
+#: includes/class-crm.php
+msgid "Not connected yet. It asks Dox Studio to connect it on its next sync."
+msgstr "Aún sin conectar. Pide a Dox Studio que la conecte en su siguiente sincronización."
+
+#: includes/class-crm.php
+msgid "Outside your plan: %s to approve"
+msgstr "Fuera de tu plan: %s por aprobar"
+
+#: includes/class-crm.php
+msgid "Outside your plan: to approve"
+msgstr "Fuera de tu plan: por aprobar"
+
+#: includes/class-crm.php
+msgid "Received"
+msgstr "Recibida"
+
+#: includes/class-crm.php
+msgid "Request sent: %s. You will see here when it is in the queue."
+msgstr "Solicitud enviada: %s. Aquí verás cuándo entra en la cola."
+
+#: includes/class-crm.php
+msgid "Set by Dox Studio in its CRM. It changes there, not here."
+msgstr "Lo fija Dox Studio en su CRM. Se cambia allí, no aquí."
+
+#: includes/class-crm.php
+msgid "Sync now"
+msgstr "Sincronizar ahora"
+
+#: includes/class-crm.php
+msgid "Synced."
+msgstr "Sincronizado."
+
+#: includes/class-crm.php
+msgid "Waiting for Dox Studio to approve this website."
+msgstr "Esperando a que Dox Studio apruebe esta web."
+
+#: includes/class-crm.php
+msgid "We need something from you"
+msgstr "Te necesito"

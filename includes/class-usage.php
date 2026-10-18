@@ -43,6 +43,13 @@ class Dox_Care_Usage {
 	}
 
 	public static function used( $month = null ) {
+		// Conectada al CRM, el número del mes en curso es el suyo (0.4.0).
+		if ( ( $month === null || $month === self::month_key() ) && Dox_Care_Crm::connected() ) {
+			$crm = Dox_Care_Crm::used();
+			if ( $crm !== null ) {
+				return $crm;
+			}
+		}
 		$sum = 0;
 		foreach ( self::entries( $month ) as $e ) {
 			$sum += (int) ( $e['units'] ?? 0 );
@@ -65,6 +72,10 @@ class Dox_Care_Usage {
 	 * Devuelve su id, o '' si el mes ya tiene MONTH_MAX entradas.
 	 */
 	public static function add( array $entry ) {
+		// Conectada al CRM, la web ya no cuenta: cuenta el CRM.
+		if ( Dox_Care_Crm::connected() ) {
+			return '';
+		}
 		$time  = (int) ( $entry['time'] ?? time() );
 		$month = self::month_key( $time );
 		$data  = self::all();

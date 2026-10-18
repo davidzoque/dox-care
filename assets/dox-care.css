@@ -184,3 +184,4 @@ html.dxc-lock { overflow:hidden; }
 .dxc-modal h2 { font-family:Poppins,sans-serif !important; font-weight:600 !important; color:var(--k) !important; text-transform:none !important; letter-spacing:-.02em !important; }
 .dxc-modal .dxc-ey { font-family:Manrope,sans-serif !important; }
 @keyframes dxcFade { from { opacity:0; } to { opacity:1; } }
+.dxc-log em.dxc-state { grid-column:1; justify-self:start; margin:2px 0; padding:2px 9px; border-radius:999px; background:#FFF3E6; color:#9C5405; font-style:normal; font-size:12px; font-weight:600; }

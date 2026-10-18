@@ -1,9 +1,12 @@
 <?php
 /**
- * "Pedir un cambio": el formulario del escritorio y de la barra superior manda la
- * solicitud por correo a soporte (support@doxstudio.com por defecto), con la web,
- * la página, quién la pide y los archivos adjuntos. Se guardan las últimas 20 en
- * la propia web para que cada usuario vea lo que ha pedido él.
+ * "Pedir un cambio": el formulario del escritorio y de la barra superior.
+ *
+ * Con la web conectada al CRM de Dox Studio (0.4.0), la solicitud va firmada al CRM
+ * con sus adjuntos, que contesta con su número (DC-1042); si el CRM no contesta, sale
+ * por correo a soporte como antes, marcada "[Sin CRM]", y el cron la reintenta. Sin
+ * conectar todavía, sale por correo y cuenta en el contador de la web (lo de siempre).
+ * Se guardan las últimas 20 en la propia web para que cada usuario vea las suyas.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -174,6 +177,37 @@ class Dox_Care_Requests {
 		$site  = wp_parse_url( home_url(), PHP_URL_HOST );
 		$title = $own ? self::page_title( $page ) : __( 'Another page', 'dox-care' );
 
+		// Conectada al CRM: la solicitud va allí con sus adjuntos y vuelve con su número.
+		$crm_failed = false;
+		if ( Dox_Care_Crm::connected() ) {
+			$data = [
+				'key'             => bin2hex( random_bytes( 10 ) ),
+				'page'            => $own ? $page : $raw_page,
+				'message'         => sanitize_textarea_field( $raw_msg ),
+				'requester_name'  => $user->display_name,
+				'requester_email' => $user->user_email,
+				'wp_user'         => (string) $user->ID,
+			];
+			$res = Dox_Care_Crm::send_request( $data, $attachments );
+			if ( $res['ok'] ) {
+				self::remember( $title, $page, $message, count( $names ), $user, $res['ref'] );
+				/* translators: %s: request number, e.g. DC-1042 */
+				$done = sprintf( __( 'Request sent: %s. You will see here when it is in the queue.', 'dox-care' ), $res['ref'] );
+				if ( $skipped ) {
+					/* translators: %d: number of files left out */
+					$done .= ' ' . sprintf( _n( '%d file was not attached (wrong type, too big or too many): send it to us by email.', '%d files were not attached (wrong type, too big or too many): send them to us by email.', $skipped, 'dox-care' ), $skipped );
+				}
+				wp_send_json_success( [ 'message' => $done ] );
+			}
+			if ( $res['limited'] ) {
+				wp_send_json_error( [ 'message' => __( 'You have sent many requests today. Write to us by email and we will take care of it.', 'dox-care' ) ], 429 );
+			}
+			// El CRM no contestó: sale por correo como antes y el cron la reintenta (sin
+			// adjuntos: esos ya van en el correo).
+			$crm_failed = true;
+			Dox_Care_Crm::queue( $data );
+		}
+
 		// Cuenta del mes (Términos, sección F): esta solicitud sería la número $n.
 		$limit = Dox_Care_Usage::limit();
 		$n     = Dox_Care_Usage::used() + 1;
@@ -183,6 +217,9 @@ class Dox_Care_Requests {
 		$subject = sprintf( __( '[Dox Care] Change on %1$s: %2$s', 'dox-care' ), $site, $title );
 		if ( $over ) {
 			$subject = __( '[Outside the plan]', 'dox-care' ) . ' ' . $subject;
+		}
+		if ( $crm_failed ) {
+			$subject = '[Sin CRM] ' . $subject;
 		}
 
 		$rows = [
@@ -217,17 +254,7 @@ class Dox_Care_Requests {
 			wp_send_json_error( [ 'message' => __( 'We could not send it. Please write to us by email.', 'dox-care' ) ], 500 );
 		}
 
-		$log = self::log();
-		array_unshift( $log, [
-			'time'    => time(),
-			'page'    => $title,
-			'url'     => $page,
-			'message' => mb_substr( $message, 0, 140 ),
-			'files'   => count( $names ),
-			'user'    => $user->display_name,
-			'user_id' => $user->ID,
-		] );
-		update_option( self::LOG, array_slice( $log, 0, 20 ), false );
+		self::remember( $title, $page, $message, count( $names ), $user, '' );
 
 		Dox_Care_Usage::add( [ 'source' => 'form', 'page' => $title, 'message' => $message, 'units' => 1 ] );
 
@@ -237,6 +264,22 @@ class Dox_Care_Requests {
 			$done .= ' ' . sprintf( _n( '%d file was not attached (wrong type, too big or too many): send it to us by email.', '%d files were not attached (wrong type, too big or too many): send them to us by email.', $skipped, 'dox-care' ), $skipped );
 		}
 		wp_send_json_success( [ 'message' => $done ] );
+	}
+
+	/** Guarda la solicitud en el registro de la web (las 20 últimas). */
+	private static function remember( $title, $page, $message, $files, $user, $ref ) {
+		$log = self::log();
+		array_unshift( $log, [
+			'time'    => time(),
+			'page'    => $title,
+			'url'     => $page,
+			'message' => mb_substr( $message, 0, 140 ),
+			'files'   => (int) $files,
+			'user'    => $user->display_name,
+			'user_id' => $user->ID,
+			'ref'     => $ref,
+		] );
+		update_option( self::LOG, array_slice( $log, 0, 20 ), false );
 	}
 
 	private static function page_title( $url ) {

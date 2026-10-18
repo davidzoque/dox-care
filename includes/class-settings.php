@@ -29,6 +29,13 @@ class Dox_Care_Settings {
 	}
 
 	public static function get( $key ) {
+		// El plan lo dice el CRM cuando la web está conectada (0.4.0).
+		if ( $key === 'plan' && class_exists( 'Dox_Care_Crm' ) ) {
+			$crm = Dox_Care_Crm::plan();
+			if ( $crm !== null ) {
+				return $crm;
+			}
+		}
 		$all = self::all();
 		return $all[ $key ] ?? null;
 	}
@@ -229,6 +236,7 @@ class Dox_Care_Settings {
 	public static function render() {
 		$s     = self::all();
 		$plans = Dox_Care_Plans::all();
+		$crm   = Dox_Care_Crm::plan();
 		if ( ! self::is_staff() ) {
 			?>
 			<div class="wrap dxc-settings">
@@ -255,12 +263,17 @@ class Dox_Care_Settings {
 					<tr>
 						<th scope="row"><label for="dxc-plan"><?php esc_html_e( 'Care plan', 'dox-care' ); ?></label></th>
 						<td>
-							<select id="dxc-plan" name="plan">
+							<select id="dxc-plan" name="plan" <?php disabled( $crm !== null ); ?>>
 								<?php foreach ( $plans as $key => $plan ) : ?>
-									<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $s['plan'], $key ); ?>><?php echo esc_html( $plan['name'] ); ?></option>
+									<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $crm ?? $s['plan'], $key ); ?>><?php echo esc_html( $plan['name'] ); ?></option>
 								<?php endforeach; ?>
 							</select>
-							<p class="description"><?php esc_html_e( 'The plan this client has. It decides what the dashboard says is included.', 'dox-care' ); ?></p>
+							<?php if ( $crm !== null ) : ?>
+								<input type="hidden" name="plan" value="<?php echo esc_attr( $s['plan'] ); ?>">
+								<p class="description"><?php esc_html_e( 'Set by Dox Studio in its CRM. It changes there, not here.', 'dox-care' ); ?></p>
+							<?php else : ?>
+								<p class="description"><?php esc_html_e( 'The plan this client has. It decides what the dashboard says is included.', 'dox-care' ); ?></p>
+							<?php endif; ?>
 						</td>
 					</tr>
 					<tr>
@@ -303,9 +316,48 @@ class Dox_Care_Settings {
 				</table>
 				<?php submit_button( __( 'Save changes', 'dox-care' ) ); ?>
 			</form>
-			<?php self::render_usage(); ?>
+			<?php self::render_crm(); ?>
+			<?php if ( ! Dox_Care_Crm::connected() ) { self::render_usage(); } ?>
 			<p><a href="<?php echo esc_url( admin_url( 'index.php' ) ); ?>"><?php esc_html_e( 'See the dashboard', 'dox-care' ); ?></a></p>
 		</div>
+		<?php
+	}
+
+	/** La conexión con el CRM de Dox Studio: en qué punto está y "Sincronizar ahora". */
+	private static function render_crm() {
+		$c      = Dox_Care_Crm::state();
+		$labels = [
+			'none'      => __( 'Not connected yet. It asks Dox Studio to connect it on its next sync.', 'dox-care' ),
+			'pending'   => __( 'Waiting for Dox Studio to approve this website.', 'dox-care' ),
+			'approved'  => __( 'Approved. It picks up its key on its next sync.', 'dox-care' ),
+			'rejected'  => __( 'Dox Studio rejected the connection of this website.', 'dox-care' ),
+			'connected' => __( 'Connected with Dox Studio. The plan and the updates of the month come from its CRM.', 'dox-care' ),
+		];
+		?>
+		<hr>
+		<h2 id="dxc-crm"><?php esc_html_e( 'Connection with Dox Studio', 'dox-care' ); ?></h2>
+		<?php if ( isset( $_GET['synced'] ) ) : ?>
+			<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Synced.', 'dox-care' ); ?></p></div>
+		<?php endif; ?>
+		<p><strong><?php echo esc_html( $labels[ $c['state'] ] ?? $labels['none'] ); ?></strong></p>
+		<p class="description">
+			<?php
+			if ( $c['last_sync'] ) {
+				/* translators: %s: date and time */
+				printf( esc_html__( 'Last sync: %s.', 'dox-care' ), esc_html( self::date( $c['last_sync'] ) . ' ' . wp_date( 'H:i', $c['last_sync'] ) ) );
+				echo ' ';
+			}
+			if ( $c['last_error'] ) {
+				/* translators: %s: error code */
+				printf( esc_html__( 'Last error: %s.', 'dox-care' ), esc_html( $c['last_error'] ) );
+			}
+			?>
+		</p>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<input type="hidden" name="action" value="dox_care_crm_sync">
+			<?php wp_nonce_field( 'dox_care_crm_sync' ); ?>
+			<?php submit_button( __( 'Sync now', 'dox-care' ), 'secondary', 'submit', false ); ?>
+		</form>
 		<?php
 	}
 

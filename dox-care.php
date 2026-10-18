@@ -4,7 +4,7 @@
  * Plugin URI:  https://doxstudio.com/es/mantenimiento-web/
  * Update URI:  https://github.com/davidzoque/dox-care
  * Description: Your website care plan with Dox Studio: a dashboard with your plan, your site status and a one-click way to request changes.
- * Version:     0.3.8
+ * Version:     0.4.0
  * Author:      Dox Studio
  * Author URI:  https://doxstudio.com
  * License:     GPL-2.0+
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'DOX_CARE_VERSION', '0.3.8' );
+define( 'DOX_CARE_VERSION', '0.4.0' );
 define( 'DOX_CARE_FILE', __FILE__ );
 define( 'DOX_CARE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'DOX_CARE_URL', plugin_dir_url( __FILE__ ) );
@@ -64,6 +64,7 @@ if ( file_exists( DOX_CARE_DIR . 'dox-core/loader.php' ) && file_exists( DOX_CAR
 
 require_once DOX_CARE_DIR . 'includes/class-settings.php';
 require_once DOX_CARE_DIR . 'includes/class-mailer.php';
+require_once DOX_CARE_DIR . 'includes/class-crm.php';
 require_once DOX_CARE_DIR . 'includes/class-plans.php';
 require_once DOX_CARE_DIR . 'includes/class-feed.php';
 require_once DOX_CARE_DIR . 'includes/class-status.php';
@@ -86,6 +87,7 @@ add_action( 'init', function () {
 add_action( 'plugins_loaded', function () {
 	Dox_Care_Settings::init();
 	Dox_Care_Feed::init();
+	Dox_Care_Crm::init();
 	Dox_Care_Dashboard::init();
 	Dox_Care_Requests::init();
 	Dox_Care_Admin_Bar::init();
@@ -121,4 +123,6 @@ register_activation_hook( __FILE__, function () {
 
 register_deactivation_hook( __FILE__, function () {
 	wp_clear_scheduled_hook( Dox_Care_Feed::HOOK );
+	wp_clear_scheduled_hook( Dox_Care_Crm::HOOK );
+	wp_clear_scheduled_hook( Dox_Care_Crm::HOOK . '_once' );
 } );

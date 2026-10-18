@@ -837,3 +837,87 @@ msgstr[1] ""
 #, php-format
 msgid "This month: %1$d of %2$d updates used"
 msgstr ""
+
+#: includes/class-crm.php
+msgid "Approved. It picks up its key on its next sync."
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Closed"
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Connected with Dox Studio. The plan and the updates of the month come from its CRM."
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Connection with Dox Studio"
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Done"
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Dox Studio rejected the connection of this website."
+msgstr ""
+
+#: includes/class-crm.php
+msgid "In progress"
+msgstr ""
+
+#: includes/class-crm.php
+msgid "In queue"
+msgstr ""
+
+#: includes/class-crm.php
+msgid "In queue, ready by %s"
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Last error: %s."
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Last sync: %s."
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Not connected yet. It asks Dox Studio to connect it on its next sync."
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Outside your plan: %s to approve"
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Outside your plan: to approve"
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Received"
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Request sent: %s. You will see here when it is in the queue."
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Set by Dox Studio in its CRM. It changes there, not here."
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Sync now"
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Synced."
+msgstr ""
+
+#: includes/class-crm.php
+msgid "Waiting for Dox Studio to approve this website."
+msgstr ""
+
+#: includes/class-crm.php
+msgid "We need something from you"
+msgstr ""

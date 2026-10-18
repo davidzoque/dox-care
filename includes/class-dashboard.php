@@ -98,7 +98,21 @@ class Dox_Care_Dashboard {
 			$user = wp_get_current_user();
 			$name = $user->first_name ?: $user->display_name;
 		}
-		$log = array_slice( Dox_Care_Requests::user_log(), 0, 3 );
+		// Conectada al CRM, las últimas solicitudes y su estado vienen de allí.
+		$log = [];
+		if ( Dox_Care_Crm::connected() ) {
+			foreach ( array_slice( Dox_Care_Crm::user_requests(), 0, 3 ) as $r ) {
+				$log[] = [
+					'page'    => $r['page'] ?: __( 'The whole website', 'dox-care' ),
+					'message' => ( $r['status'] ?? '' ) === 'needs_info' && ! empty( $r['question'] ) ? $r['question'] : (string) ( $r['message'] ?? '' ),
+					'time'    => (int) ( $r['received'] ?? 0 ),
+					'state'   => Dox_Care_Crm::status_label( $r ),
+					'ref'     => (string) ( $r['ref'] ?? '' ),
+				];
+			}
+		} else {
+			$log = array_slice( Dox_Care_Requests::user_log(), 0, 3 );
+		}
 		?>
 		<div class="dxc">
 			<div class="dxc-top">
@@ -164,7 +178,7 @@ class Dox_Care_Dashboard {
 							<p class="dxc-ey"><?php esc_html_e( 'Your latest requests', 'dox-care' ); ?></p>
 							<ul>
 								<?php foreach ( $log as $r ) : ?>
-									<li><b><?php echo esc_html( $r['page'] ); ?></b><span><?php echo esc_html( $r['message'] ); ?></span><small><?php echo esc_html( Dox_Care_Settings::date( $r['time'] ) ); ?></small></li>
+									<li><b><?php echo esc_html( $r['page'] ); ?></b><?php if ( ! empty( $r['state'] ) ) : ?><em class="dxc-state"><?php echo esc_html( $r['state'] ); ?></em><?php endif; ?><span><?php echo esc_html( $r['message'] ); ?></span><small><?php echo esc_html( trim( ( $r['ref'] ?? '' ) . ' · ' . Dox_Care_Settings::date( $r['time'] ), ' ·' ) ); ?></small></li>
 								<?php endforeach; ?>
 							</ul>
 						</div>

@@ -6,7 +6,15 @@ Plugin de WordPress de Dox Studio para las webs de sus clientes de hosting y man
 
 - **Escritorio propio dentro del panel.** Al entrar a WordPress se ve el escritorio de Dox Care en lugar del de siempre: el plan del cliente, el estado de su web, su cuenta en clients.doxstudio.com, lo que puede resolver solo y los planes superiores. El escritorio clásico sigue en `index.php?dox_classic=1`.
 - **Pedir un cambio.** Formulario (página de la web, texto de hasta 5.000 caracteres y hasta 5 archivos, 20 MB en total, comprobando que su contenido es del tipo que dice) que llega por correo a support@doxstudio.com, con Reply-To del cliente. Lo pueden usar Editor y Administrador (filtro `dox_care_request_cap` para abrirlo a otros roles), hasta 5 solicitudes al día por web, y cada usuario ve solo las suyas. También desde la barra superior de la web ("Pedir un cambio aquí"), con la página que se está viendo ya elegida.
-- **Contador de actualizaciones del mes**, según la sección F de los Términos del Servicio: cada solicitud cuenta 1; Dox Studio la ajusta y añade a mano las que llegan por correo o ticket. El cliente ve "Este mes: X de 3".
+- **Conectado al CRM de Dox Studio (0.4.0).** El número que vale es el del CRM (portal.doxstudio.com, módulo Perfex `dox_care`), no el de la web: un administrador del sitio podía poner el contador a cero (auditoría del 05/10/2026). Con la web conectada, el formulario manda la solicitud firmada al CRM con sus adjuntos y enseña su número (DC-1042); el plan, "Este mes: X de 3" y el estado de "Tus últimas solicitudes" ("En cola, lista antes del jueves 23", "Te necesito") salen de lo que devuelve el CRM. Detalles en `includes/class-crm.php`:
+  - **Alta sin copiar claves.** La web genera un "claim" que nunca sale de ella y pide su alta con el SHA-256 (`register`). Dox Studio la aprueba en Care > Allowances; antes, el CRM le pide el hash a la propia web en `https://<dominio>/?dox_care_claim=<número>` (sin caché), así que solo quien controla el dominio la conecta. Aprobada, recoge su secreto una vez (`claim`), guardado en la opción `dox_care_crm` sin autoload.
+  - **Firma**: cada petición lleva `X-Dox-Care-Site`, la hora y un HMAC-SHA256 de la hora, el método, la ruta y el SHA-256 del JSON y de cada adjunto. Fuera de 5 minutos, rechazada. Con el secreto solo se crean solicitudes de esta web y se lee su estado.
+  - **El estado** se pide por el cron dos veces al día (`dox_care_crm_sync`), un minuto después de actualizar el plugin y justo después de enviar; el escritorio pinta lo guardado (`dox_care_crm_status`) y nunca espera al CRM.
+  - **Si el CRM no contesta**, la solicitud sale por correo como antes con el asunto "[Sin CRM]" y queda en `dox_care_crm_outbox`; el cron la reintenta y su clave evita duplicarla.
+  - **Al conectarse** manda una vez lo que el contador viejo tiene de este mes (`import`), que entra en el CRM como "importado" para cuadrar el mes.
+  - **Si el CRM la desconecta** (o el secreto deja de valer), la web borra su secreto y vuelve a pedir el alta sola.
+  - En los ajustes (equipo de Dox), "Conexión con Dox Studio" dice en qué punto está, con "Sincronizar ahora"; conectada, el plan no se elige aquí y la tabla del contador desaparece.
+- **Contador de actualizaciones del mes** (hasta la 0.3.8, y en 0.4.0 mientras la web no está conectada al CRM), según la sección F de los Términos del Servicio: cada solicitud cuenta 1; Dox Studio la ajusta y añade a mano las que llegan por correo o ticket. El cliente ve "Este mes: X de 3".
 - **Estado de la web** leído de la propia web: SSL y su renovación, actualizaciones pendientes y último cambio publicado.
 - **Aviso central**: el cron de WordPress lee `https://my.doxstudio.com/dox-care.json` dos veces al día y el escritorio pinta lo guardado, sin esperar nunca a my.doxstudio.com (avisos para todos los clientes y precios de los planes). Se puede cambiar con la constante `DOX_CARE_FEED` en wp-config.php.
 - **Entrar con un código por correo**, además de con la contraseña (que sigue igual). **Encendido de fábrica, también para administradores** (decisión de David el 05/10/2026: lo que buscamos es que sus clientes, que casi siempre son administradores, entren cómodos). Código de 6 números, 10 minutos, un solo uso y 5 intentos. Sale bajo el formulario de entrada de WordPress (`wp-login.php?action=dox_code`, también con Hide My WP) y en la caja de Dox POS desde la 0.45.0, que lo pide por sus filtros `dox_pos_login_code_*` y solo lo envía a cuentas que pueden usar la caja.
@@ -29,7 +37,7 @@ En **Dox Plugins > Dox Care**: plan, nombre del cliente, idioma (automático, es
 ## Estructura
 
 - `dox-care.php`: arranque, idioma, actualizador y registro en el menú "Dox Plugins".
-- `includes/`: ajustes, planes, aviso central, estado, contador, solicitudes, escritorio y barra superior. Los correos en HTML salen por `class-mailer.php`, que les añade la versión en texto plano.
+- `includes/`: ajustes, planes, aviso central, conexión con el CRM (`class-crm.php`), estado, contador, solicitudes, escritorio y barra superior. Los correos en HTML salen por `class-mailer.php`, que les añade la versión en texto plano.
 - `assets/`: CSS y JS del escritorio y de la ventana.
 - `languages/`: textos en inglés en el código y traducción al español (`dox-care-es_ES.po/.mo`).
 - `dox-core/`: copia del menú común de los plugins de Dox Studio (se edita en `Plugins/dox-core/` y se sincroniza con `sync-dox-core.sh`).
@@ -40,3 +48,7 @@ En **Dox Plugins > Dox Care**: plan, nombre del cliente, idioma (automático, es
 1. Subir la versión en la cabecera de `dox-care.php` y en `DOX_CARE_VERSION`.
 2. Si cambian textos: regenerar `languages/dox-care.pot`, traducir en el `.po` y compilar el `.mo` con `msgfmt`.
 3. Commit en `main`, tag `vX.Y.Z` y push del tag. El workflow comprueba que versión y tag coinciden, construye `dox-care.zip` y lo adjunta a la release. Las webs lo ven como una actualización normal de WordPress (y en Modular DS).
+
+## Pruebas
+
+La conexión con el CRM se prueba contra el CRM de verdad desde el módulo de Perfex: `php tests/run.php` en `Projects/Perfex CRM/Perfex Modules/dox_care/` carga `includes/class-crm.php` con un WordPress simulado y hace alta, aprobación, secreto, importación, solicitud con adjunto, estado y desconexión (`tests/plugin.php`).
