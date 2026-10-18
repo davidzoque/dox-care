@@ -35,6 +35,7 @@ class Dox_Care_Crm {
 	const OUTBOX  = 'dox_care_crm_outbox';  // solicitudes que no pudieron llegar.
 	const HOOK    = 'dox_care_crm_sync';
 	const VERSION = 'dox_care_crm_version'; // versión del plugin en la última pasada.
+	const WAITING = [ 'none', 'pending', 'approved', 'rejected' ]; // estados sin secreto con salida.
 
 	public static function init() {
 		add_action( self::HOOK, [ __CLASS__, 'sync' ] );
@@ -180,6 +181,12 @@ class Dox_Care_Crm {
 		return [ 'code' => $code, 'body' => $data ];
 	}
 
+	/** Un estado del CRM sin secreto: solo los de WAITING; cualquier otro, volver a empezar. */
+	private static function waiting_state( $state ) {
+		$state = sanitize_key( $state );
+		return in_array( $state, self::WAITING, true ) ? $state : 'none';
+	}
+
 	private static function reset( $why ) {
 		$s = self::state();
 		$s['state']         = 'none';
@@ -207,6 +214,16 @@ class Dox_Care_Crm {
 
 		$s = self::state();
 
+		// Sin secreto, solo valen los estados que llevan a algún sitio. Un CRM
+		// anterior a la 1.2.1 podía contestar "connected" sin secreto (o
+		// "revoked"), y la 0.4.1 se quedaba ahí parada para siempre: se vuelve a
+		// empezar y se pide el alta ya (0.4.2).
+		if ( ! self::connected() && ! in_array( $s['state'], self::WAITING, true ) ) {
+			$s['state']         = 'none';
+			$s['registered_at'] = 0;
+			self::save( $s );
+		}
+
 		if ( ! self::connected() ) {
 			if ( $s['claim'] === '' ) {
 				$s['claim'] = bin2hex( random_bytes( 32 ) );
@@ -216,7 +233,7 @@ class Dox_Care_Crm {
 				$r = self::post( 'register', [ 'claim_hash' => hash( 'sha256', $s['claim'] ), 'plugin_version' => DOX_CARE_VERSION, 'account' => self::account() ], [], false );
 				$s['registered_at'] = time();
 				if ( $r['code'] === 200 && ! empty( $r['body']['state'] ) ) {
-					$s['state']      = sanitize_key( $r['body']['state'] );
+					$s['state']      = self::waiting_state( $r['body']['state'] );
 					$s['last_error'] = '';
 				} else {
 					$s['last_error'] = sanitize_key( $r['body']['error'] ?? 'no_answer' );
@@ -233,7 +250,7 @@ class Dox_Care_Crm {
 					$s['claim']  = '';
 					self::save( $s );
 				} elseif ( $r['code'] === 200 && ! empty( $r['body']['state'] ) ) {
-					$s['state'] = sanitize_key( $r['body']['state'] );
+					$s['state'] = self::waiting_state( $r['body']['state'] );
 					self::save( $s );
 				}
 			}
